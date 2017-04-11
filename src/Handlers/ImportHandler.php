@@ -866,7 +866,7 @@ class ImportHandler extends ActionHandler
      */
     public function hasRelationAttribute($attrname)
     {
-        return in_array(get_class($this->getUsableAttribute($attrname)), array('atkmanytoonerelation', 'atkmanytoonetreerelation'));
+        return in_array(get_class($this->getUsableAttribute($attrname)), array('atkmanytoonerelation'));
     }
 
     /**

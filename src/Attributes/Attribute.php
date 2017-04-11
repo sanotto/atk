@@ -232,7 +232,7 @@ class Attribute
     const AF_NO_FILTER = 2097152;
 
     /**
-     * Parent field for parent child relations (treeview).
+     * UNUSED (was used by the Tree, maybe we could recycle this flag for other things)
      *
      * miscellaneous processing flag
      */

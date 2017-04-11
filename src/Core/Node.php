@@ -77,7 +77,7 @@ class Node
     const NF_NO_VIEW = 128;
 
     /**
-     * Records / trees may be copied.
+     * Records may be copied.
      */
     const NF_COPY = 256;
 
@@ -631,12 +631,6 @@ class Node
      */
     private $m_attribOrder = 0;
 
-    /*
-     * parent Attribute flag (treeview)
-     */
-    public $m_parent;
-
-
     public $m_cacheidentifiers;
 
     /**
@@ -805,11 +799,6 @@ class Node
 
         if (!$this->atkReadOptimizer()) {
             $this->resolveSectionsTabsOrder($sections, $tabs, $column, $order);
-
-            // check for parent fieldname (treeview)
-            if ($attribute->hasFlag($attribute::AF_PARENT)) {
-                $this->m_parent = $attribute->fieldName();
-            }
 
             // check for cascading delete flag
             if ($attribute->hasFlag($attribute::AF_CASCADE_DELETE)) {

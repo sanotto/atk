@@ -541,7 +541,6 @@ class SessionManager
             'atklimit',
             'atktarget',
             'atkformdata',
-            'atktree',
             'atksuppress',
             'atktab',
             'atksmartsearch',
