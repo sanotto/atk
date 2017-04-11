@@ -13,7 +13,8 @@ use Sintattica\Atk\Utils\Debugger;
 class Atk
 {
     const VERSION = 'v9.0.0';
-
+    /** @var static $s_instance */
+    public static $s_instance;
     public $g_nodes = [];
     public $g_nodesClasses = [];
     public $g_nodeRepository = [];
@@ -23,12 +24,10 @@ class Atk
     public $g_nodeListeners = [];
     private $environment;
 
-    /** @var static $s_instance */
-    public static $s_instance;
-
     public function __construct($environment, $basedir)
     {
-        Debugger::startTime();
+        // force the instantiation of the Debugger
+        Debugger::getInstance();
 
         if (static::$s_instance) {
             throw new \RuntimeException('Only one Atk app can be created');
@@ -120,7 +119,7 @@ class Atk
         $securityManager = SecurityManager::getInstance();
         $securityManager->run();
 
-        if($securityManager->isAuthenticated()) {
+        if ($securityManager->isAuthenticated()) {
             $this->bootModules();
             $indexPageClass = Config::getGlobal('indexPage');
 

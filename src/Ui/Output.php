@@ -124,8 +124,6 @@ class Output
      */
     public function outputFlush($nocache = true, $lastmodificationstamp = '', $charset = '')
     {
-        global $g_error_msg;
-
         if (strlen($this->m_raw) > 0) {
             $res = $this->m_raw;
         } else {
@@ -159,10 +157,9 @@ class Output
      */
     public function getDebugging()
     {
-        global $g_debug_msg;
         if (Config::getGlobal('debug') > 0) {
             $output = '<br><div style="font-family: monospace; font-size: 11px;" align="left" id="atk_debugging_div">'.implode("<br>\n ",
-                    $g_debug_msg).'</div>';
+                    Debugger::getDebugMessages()).'</div>';
 
             return $output;
         }

@@ -231,7 +231,6 @@ class Tools
      */
     public static function atkdebug($txt, $flags = 0)
     {
-        global $g_debug_msg;
         $level = Config::getGlobal('debug');
         if ($level >= 0) {
             if (self::hasFlag($flags, self::DEBUG_HTML)) {
@@ -248,20 +247,13 @@ class Tools
                 $line = '<span class="atkDebugError">'.$line.'</span>';
             }
 
-            if ($level > 2) {
-                if (!Debugger::addStatement($line)) {
-                    $g_debug_msg[] = $line;
-                }
-            } else {
-                if (!self::hasFlag($flags, self::DEBUG_NOTICE)) {
-                    $g_debug_msg[] = $line;
-                }
+            if (!self::hasFlag($flags, self::DEBUG_NOTICE)) {
+                Debugger::addDebugMessage($line);
             }
-        } else {
-            if ($level > -1) { // at 0 we still collect the info so we
-                // have it in error reports. At -1, we don't collect
-                $g_debug_msg[] = $txt;
-            }
+        } elseif ($level > -1) {
+            // at 0 we still collect the info so we
+            // have it in error reports. At -1, we don't collect
+            Debugger::addDebugMessage($txt);
         }
     }
 
@@ -310,13 +302,12 @@ class Tools
      */
     public static function atkerror($error, $skipThrow = false)
     {
-        global $g_error_msg, $g_debug_msg;
 
         if ($error instanceof \Exception) {
-            $g_error_msg[] = '['.Debugger::elapsed().'] '.$error->getMessage();
+            Debugger::addErrorMessage('['.Debugger::elapsed().'] '.$error->getMessage());
             self::atkdebug(nl2br($error->getMessage()."\n".$error->getTraceAsString()), self::DEBUG_ERROR);
         } else {
-            $g_error_msg[] = '['.Debugger::elapsed().'] '.$error;
+            Debugger::addErrorMessage('['.Debugger::elapsed().'] '.$error);
             self::atkdebug($error, self::DEBUG_ERROR);
         }
 
@@ -336,7 +327,7 @@ class Tools
                 $key = $value;
             }
             $errorHandlerObject = ErrorHandlerBase::get($key, $value);
-            $errorHandlerObject->handle($g_error_msg, $g_debug_msg);
+            $errorHandlerObject->handle(Debugger::getErrorMessages(), Debugger::getDebugMessages());
         }
 
         if (!$skipThrow && Config::getGlobal('throw_exception_on_error')) {
