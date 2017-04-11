@@ -8,6 +8,7 @@ use Sintattica\Atk\Security\SecurityManager;
 use Sintattica\Atk\Security\SqlWhereclauseBlacklistChecker;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Ui\IndexPage;
+use Sintattica\Atk\Utils\Debugger;
 
 class Atk
 {
@@ -27,8 +28,7 @@ class Atk
 
     public function __construct($environment, $basedir)
     {
-        global $g_startTime;
-        $g_startTime = microtime(true);
+        Debugger::startTime();
 
         if (static::$s_instance) {
             throw new \RuntimeException('Only one Atk app can be created');

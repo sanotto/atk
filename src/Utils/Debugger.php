@@ -21,6 +21,7 @@ class Debugger
     public $m_redirectUrl = null;
     private static $s_queryCount = 0;
     private static $s_systemQueryCount = 0;
+    private static $s_startTime;
 
     /**
      * Get an instance of this class.
@@ -469,10 +470,10 @@ class Debugger
      */
     public function renderDebugBlock($expanded)
     {
-        global $g_debug_msg, $g_error_msg, $g_startTime;
+        global $g_debug_msg, $g_error_msg;
 
-        $time = strftime('%H:%M:%S', $g_startTime);
-        $duration = sprintf('%02.05f', self::getMicroTime() - $g_startTime);
+        $time = strftime('%H:%M:%S', self::$s_startTime);
+        $duration = sprintf('%02.05f', self::getMicroTime() - self::$s_startTime);
         $usage = function_exists('memory_get_usage') ? sprintf('%02.02f', (memory_get_usage() / 1024 / 1024)) : '? ';
         $method = $_SERVER['REQUEST_METHOD'];
         $protocol = empty($_SERVER['HTTPS']) || strtolower($_SERVER['HTTPS']) == 'off' ? 'http' : 'https';
@@ -597,12 +598,10 @@ class Debugger
      */
     public static function elapsed()
     {
-        global $g_startTime;
-
         static $offset = null, $previous = null;
 
         if ($offset === null) {
-            $offset = $g_startTime;
+            $offset = self::$s_startTime;
             $previous = $offset;
         }
 
@@ -611,5 +610,9 @@ class Debugger
         $previous = $new;
 
         return $res;
+    }
+
+    public static function startTime(){
+        self::$s_startTime = microtime(true);
     }
 }
