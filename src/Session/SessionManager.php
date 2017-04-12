@@ -101,20 +101,13 @@ class SessionManager
         // set the cache limiter (used for caching)
         session_cache_limiter(Config::getGlobal('session_cache_limiter'));
 
-        // If somehow the sessionid is unclean (searchengine bots have been known to mangle sessionids)
-        // we don't have a session...
-        if (self::isValidSessionId()) {
-            $sessionname = Config::getGlobal('session_name');
-            if (!$sessionname) {
-                $sessionname = Config::getGlobal('identifier');
-            }
-            session_name($sessionname);
-            session_start();
-        } else {
-            Tools::atkwarning('Not a valid session!');
-
-            return false;
+        // start the session
+        $sessionname = Config::getGlobal('session_name');
+        if (!$sessionname) {
+            $sessionname = Config::getGlobal('identifier');
         }
+        session_name($sessionname);
+        session_start();
 
         //decode data
         Tools::atkDataDecode($_REQUEST);
@@ -128,7 +121,6 @@ class SessionManager
         foreach ($atkfiles as $k => $v) {
             $ATK_VARS[$k]['atkfiles'] = $v;
         }
-
 
         if (array_key_exists('atkfieldprefix', $ATK_VARS) && $ATK_VARS['atkfieldprefix'] != '') {
             $ATK_VARS = $ATK_VARS[$ATK_VARS['atkfieldprefix']];
@@ -1113,42 +1105,6 @@ class SessionManager
         }
 
         return $s_instance;
-    }
-
-    /**
-     * Checks wether or not the sessionid that was passed along is valid
-     * A session id can become invalid because of tampering and would otherwise
-     * cause a php error.
-     * A valid session id consists only of alphanumeric characters.
-     * Mind you, an empty sessionid is also valid,
-     * simply because there is no session yet.
-     *
-     * @return bool Wether or not the sessionid is valid
-     */
-    public static function isValidSessionId()
-    {
-        $name = Config::getGlobal('session_name');
-        if (empty($name)) {
-            $name = Config::getGlobal('identifier');
-        }
-
-        global ${$name};
-
-        if (isset($_COOKIE[$name]) && $_COOKIE[$name]) {
-            $sessionid = $_COOKIE[$name];
-        } else {
-            $sessionid = ${$name};
-        }
-
-        if ($sessionid == '') {
-            return true;
-        }
-
-        if (!preg_match('/^[a-z0-9:-]+$/i', $sessionid)) {
-            return false;
-        }
-
-        return true;
     }
 
     /**
