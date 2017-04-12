@@ -991,7 +991,6 @@ class SessionManager
         $returnbehaviour = null,
         $fieldprefix = ''
     ) {
-        global $g_stickyurl;
 
         $res = '';
 
@@ -1013,13 +1012,6 @@ class SessionManager
         $res .= '<input type="hidden" name="'.session_name().'" value="'.session_id().'" />';
         $res .= '<input type="hidden" name="atkescape" value="" autocomplete="off" />';
 
-        for ($i = 0; $i < count($g_stickyurl); ++$i) {
-            $value = $GLOBALS[$g_stickyurl[$i]];
-            if ($value != '') {
-                $res .= "\n".'<input type="hidden" name="'.$g_stickyurl[$i].'" value="'.$value.'" />';
-            }
-        }
-
         return $res;
     }
 
@@ -1032,12 +1024,10 @@ class SessionManager
      * @param int $levelskip the amount of levels to skip if we go back
      * @param string $url the URL
      *
-     * @return array the vars of the session
+     * @return string the vars of the session
      */
     public function sessionVars($sessionstatus = self::SESSION_DEFAULT, $levelskip = null, $url = '')
     {
-        global $g_stickyurl;
-
         $newlevel = $this->newLevel($sessionstatus, $levelskip);
         $oldlevel = $this->oldLevel($sessionstatus, $levelskip);
 
@@ -1049,16 +1039,6 @@ class SessionManager
         $vars .= 'atkprevlevel='.$oldlevel;
         if ($sessionstatus != self::SESSION_NEW) {
             $vars .= '&atkstackid='.$this->atkStackID();
-        }
-
-        for ($i = 0; $i < count($g_stickyurl); ++$i) {
-            $value = $GLOBALS[$g_stickyurl[$i]];
-            if ($value != '') {
-                if (substr($vars, -1) != '&') {
-                    $vars .= '&';
-                }
-                $vars .= $g_stickyurl[$i].'='.$value;
-            }
         }
 
         return $vars;
@@ -1085,7 +1065,6 @@ class SessionManager
         }
 
         $url .= $start;
-
         $url .= $this->sessionVars($sessionstatus, $levelskip, $url);
 
         return $url;

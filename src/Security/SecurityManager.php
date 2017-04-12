@@ -395,7 +395,6 @@ class SecurityManager
         $isCli = php_sapi_name() === 'cli';
 
         $this->m_user = $user;
-        $GLOBALS['g_user'] = &$user;
         $sm = SessionManager::getInstance();
         $sm->globalVar('authentication', ['authenticated' => 1, 'user' => $user], true);
         if (!$isCli) {

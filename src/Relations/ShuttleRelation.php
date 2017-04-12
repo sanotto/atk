@@ -203,7 +203,7 @@ class ShuttleRelation extends ManyToManyRelation
     }
 
     /**
-     * Render the multiselect list control.
+     * Render the select list control.
      *
      * @param string $name The name of the list control
      * @param array $recordset The list of records to render in the control
