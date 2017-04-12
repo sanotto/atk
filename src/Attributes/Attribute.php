@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Attributes;
 
 use Exception;
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Core\Tools;
@@ -1151,9 +1152,6 @@ class Attribute
                 $arr['hide'][] = $this->hide($defaults, $fieldprefix, $mode);
             }
         } /* edit */ else {
-            global $ATK_VARS;
-
-
             $entry = array(
                 'name' => $this->m_name,
                 'obligatory' => $this->hasFlag(self::AF_OBLIGATORY),
@@ -1167,7 +1165,7 @@ class Attribute
             /* label? */
             $entry['label'] = $this->getLabel($defaults, $mode);
             /* error? */
-            $entry['error'] = $this->getError($error) || (isset($ATK_VARS['atkerrorfields']) && Tools::atk_in_array($entry['id'], $ATK_VARS['atkerrorfields']));
+            $entry['error'] = $this->getError($error) || (isset(Atk::$ATK_VARS['atkerrorfields']) && Tools::atk_in_array($entry['id'], Atk::$ATK_VARS['atkerrorfields']));
             // on which tab?
             $entry['tabs'] = $this->getTabs();
             //on which sections?

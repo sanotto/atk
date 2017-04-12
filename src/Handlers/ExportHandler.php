@@ -2,6 +2,7 @@
 
 namespace Sintattica\Atk\Handlers;
 
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Db\Db;
 use Sintattica\Atk\RecordList\CustomRecordList;
 use Sintattica\Atk\Core\Tools;
@@ -26,8 +27,6 @@ class ExportHandler extends ActionHandler
      */
     public function action_export()
     {
-        global $ATK_VARS;
-
         // Intercept partial call
         if (!empty($this->m_partial)) {
             $this->partial($this->m_partial);
@@ -43,8 +42,8 @@ class ExportHandler extends ActionHandler
         }
 
         //need to keep the postdata after a Attribute::AF_LARGE selection in the allfield
-        if (!isset($this->m_postvars['phase']) && isset($ATK_VARS['atkformdata'])) {
-            foreach ($ATK_VARS['atkformdata'] as $key => $value) {
+        if (!isset($this->m_postvars['phase']) && isset(Atk::$ATK_VARS['atkformdata'])) {
+            foreach (Atk::$ATK_VARS['atkformdata'] as $key => $value) {
                 $this->m_postvars[$key] = $value;
             }
         }

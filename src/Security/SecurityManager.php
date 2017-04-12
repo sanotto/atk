@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Security;
 
 use Sintattica\Atk\Attributes\Attribute;
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Db\Db;
@@ -94,12 +95,10 @@ class SecurityManager
      */
     public function run()
     {
-        global $ATK_VARS;
-
         $isCli = php_sapi_name() === 'cli';
 
         // Logout?
-        if (isset($ATK_VARS['atklogout'])) {
+        if (isset(Atk::$ATK_VARS['atklogout'])) {
             $this->logout();
             if (!$isCli) {
                 header('Location: '.Config::getGlobal('dispatcher'));
@@ -109,12 +108,12 @@ class SecurityManager
 
         // Get some vars
         $session = &SessionManager::getSession();
-        $auth_rememberme = isset($ATK_VARS['auth_rememberme']) ? $ATK_VARS['auth_rememberme'] : 0;
+        $auth_rememberme = isset(Atk::$ATK_VARS['auth_rememberme']) ? Atk::$ATK_VARS['auth_rememberme'] : 0;
 
         if (Config::getGlobal('auth_loginform') == true) {
             // form login
-            $auth_user = isset($ATK_VARS['auth_user']) ? $ATK_VARS['auth_user'] : '';
-            $auth_pw = isset($ATK_VARS['auth_pw']) ? $ATK_VARS['auth_pw'] : '';
+            $auth_user = isset(Atk::$ATK_VARS['auth_user']) ? Atk::$ATK_VARS['auth_user'] : '';
+            $auth_pw = isset(Atk::$ATK_VARS['auth_pw']) ? Atk::$ATK_VARS['auth_pw'] : '';
         } else {
             // HTTP login
             $auth_user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : '';
@@ -132,8 +131,8 @@ class SecurityManager
         }
 
         // u2fauth verification?
-        if (Config::getGlobal('auth_enable_u2f') && $this->auth_response === self::AUTH_UNVERIFIED && isset($ATK_VARS['u2f_response'])) {
-            $this->u2fAuthenticate($auth_user, $ATK_VARS['u2f_response']);
+        if (Config::getGlobal('auth_enable_u2f') && $this->auth_response === self::AUTH_UNVERIFIED && isset(Atk::$ATK_VARS['u2f_response'])) {
+            $this->u2fAuthenticate($auth_user, Atk::$ATK_VARS['u2f_response']);
         }
 
         // try a standard login with user / password

@@ -68,8 +68,6 @@ class SessionManager
      */
     public function start()
     {
-        global $ATK_VARS;
-
         if (php_sapi_name() == 'cli') {
             return false; // command-line
         }
@@ -109,24 +107,7 @@ class SessionManager
         session_name($sessionname);
         session_start();
 
-        //decode data
-        Tools::atkDataDecode($_REQUEST);
-        $ATK_VARS = array_merge($_GET, $_POST);
-        Tools::atkDataDecode($ATK_VARS);
-
-        // inject $_FILES
-        $atkfiles = $_FILES;
-        Tools::atkDataDecode($atkfiles);
-        $ATK_VARS['atkfiles'] = $_FILES;
-        foreach ($atkfiles as $k => $v) {
-            $ATK_VARS[$k]['atkfiles'] = $v;
-        }
-
-        if (array_key_exists('atkfieldprefix', $ATK_VARS) && $ATK_VARS['atkfieldprefix'] != '') {
-            $ATK_VARS = $ATK_VARS[$ATK_VARS['atkfieldprefix']];
-        }
-
-        $this->session_read($ATK_VARS);
+        $this->session_read(Atk::$ATK_VARS);
 
         // Escape check
         if (isset($_REQUEST['atkescape']) && $_REQUEST['atkescape'] != '') {
@@ -137,7 +118,7 @@ class SessionManager
                 Tools::redirect($this->sessionUrl($_REQUEST['atknested'], self::SESSION_NESTED));
             } // Back check
             else {
-                if (isset($ATK_VARS['atkback']) && $ATK_VARS['atkback'] != '') {
+                if (isset(Atk::$ATK_VARS['atkback']) && Atk::$ATK_VARS['atkback'] != '') {
                     // When we go back, we go one level deeper than the level we came from.
                     Tools::redirect($this->sessionUrl(Config::getGlobal('dispatcher').'?atklevel='.($this->atkprevlevel - 1)));
                 }

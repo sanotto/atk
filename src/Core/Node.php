@@ -1047,32 +1047,6 @@ class Node
     }
 
     /**
-     * Checks if the user has filled in something:
-     * return true if he has, otherwise return false.
-     *
-     * @param  -
-     *
-     * @return boolean.
-     */
-    public function filledInForm()
-    {
-        if (is_null($this->getAttributes())) {
-            return false;
-        }
-
-        $postvars = Tools::atkGetPostVar();
-        foreach ($this->m_attribList as $name => $value) {
-            if (!$value->hasFlag(Attribute::AF_HIDE_LIST)) {
-                if (!is_array($value->fetchValue($postvars)) && $value->fetchValue($postvars) !== '') {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Gets all the attributes.
      *
      * @return Attribute[] Array with the attributes.
@@ -1619,13 +1593,12 @@ class Node
      */
     public function getActiveTab()
     {
-        global $ATK_VARS;
-        $tablist = $this->getTabs($ATK_VARS['atkaction']);
+        $tablist = $this->getTabs(Atk::$ATK_VARS['atkaction']);
 
         // Note: we may not read atktab from $this->m_postvars, because $this->m_postvars is not filled if this is
         // a nested node (in a relation for example).
-        if (!empty($ATK_VARS['atktab']) && in_array($ATK_VARS['atktab'], $tablist)) {
-            $tab = $ATK_VARS['atktab'];
+        if (!empty(Atk::$ATK_VARS['atktab']) && in_array(Atk::$ATK_VARS['atktab'], $tablist)) {
+            $tab = Atk::$ATK_VARS['atktab'];
         } elseif (!empty($this->m_default_tab) && in_array($this->m_default_tab, $tablist)) {
             $tab = $this->m_default_tab;
         } else {

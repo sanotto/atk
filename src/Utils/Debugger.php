@@ -2,6 +2,7 @@
 
 namespace Sintattica\Atk\Utils;
 
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Core\Config;
 
@@ -173,10 +174,8 @@ class Debugger
      */
     public function renderDebugAndErrorMessages()
     {
-        global $ATK_VARS;
-
         // check if this is an Ajax request
-        $isPartial = isset($ATK_VARS['atkpartial']);
+        $isPartial = isset(Atk::$ATK_VARS['atkpartial']);
 
         // only display error messages
         if (count($this->m_error_msg) > 0 && Config::getGlobal('display_errors') && Config::getGlobal('debug') <= 0 && !$isPartial) {

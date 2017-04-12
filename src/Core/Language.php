@@ -242,10 +242,8 @@ class Language
      */
     public static function getLanguage()
     {
-        global $ATK_VARS;
-
-        if (isset($ATK_VARS['atklng']) && in_array($ATK_VARS['atklng'], self::getSupportedLanguages())) {
-            $lng = $ATK_VARS['atklng'];
+        if (isset(Atk::$ATK_VARS['atklng']) && in_array(Atk::$ATK_VARS['atklng'], self::getSupportedLanguages())) {
+            $lng = Atk::$ATK_VARS['atklng'];
         } else {
             $lng = self::getUserLanguage();
         }
@@ -264,8 +262,7 @@ class Language
      */
     public static function setLanguage($lng)
     {
-        global $ATK_VARS;
-        $ATK_VARS['atklng'] = $lng;
+        Atk::$ATK_VARS['atklng'] = $lng;
     }
 
     /**

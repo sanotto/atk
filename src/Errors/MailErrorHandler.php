@@ -88,13 +88,6 @@ class MailErrorHandler extends ErrorHandlerBase
                 }
             }
 
-            $body .= "\n\nATK CONFIGURATION\n".str_repeat('-', 70)."\n";
-            foreach ($GLOBALS as $key => $value) {
-                if (substr($key, 0, 7) == 'config_') {
-                    $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 30 - strlen($key))).' = '.var_export($value, 1))."\n";
-                }
-            }
-
             $body .= "\n\nMODULE CONFIGURATION\n".str_repeat('-', 70)."\n";
             foreach ($atk->g_modules as $modname => $modpath) {
                 $modexists = file_exists($modpath) ? ' (path exists)' : ' (PATH DOES NOT EXIST!)';

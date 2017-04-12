@@ -118,13 +118,14 @@ class SqlWhereclauseBlacklistChecker
      * if it is blacklisted.
      *
      * @param string $variable
+     * @param array $request
      *
-     * @example filter_request_where_clause('atkselector')
+     * @example filter_request_where_clause('atkselector', $requestvars)
      */
-    public static function filter_request_where_clause($variable)
+    public static function filter_request_where_clause($variable, $request)
     {
-        if (isset($_REQUEST[$variable])) {
-            $values = (array)$_REQUEST[$variable];
+        if (isset($request[$variable])) {
+            $values = (array)$request[$variable];
             foreach ($values as $value) {
                 $checker = new self($value);
                 if (!$checker->isSafe()) {

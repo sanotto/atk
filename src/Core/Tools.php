@@ -1131,11 +1131,9 @@ class Tools
      */
     public static function makeUrlFromPostvars($target)
     {
-        global $ATK_VARS;
-
-        if (count($ATK_VARS)) {
+        if (count(Atk::$ATK_VARS)) {
             $url = $target.'?';
-            foreach ($ATK_VARS as $key => $val) {
+            foreach (Atk::$ATK_VARS as $key => $val) {
                 $url .= $key.'='.rawurlencode($val).'&';
             }
 
@@ -1152,11 +1150,10 @@ class Tools
      */
     public static function makeHiddenPostvars($excludes = array())
     {
-        global $ATK_VARS;
         $str = '';
 
-        if (count($ATK_VARS)) {
-            foreach ($ATK_VARS as $key => $val) {
+        if (count(Atk::$ATK_VARS)) {
+            foreach (Atk::$ATK_VARS as $key => $val) {
                 if (!in_array($key, $excludes)) {
                     $inputs = [];
                     self::atkMakeHiddenPostVarsRecursion($key, $val, $inputs);
@@ -1470,24 +1467,6 @@ class Tools
         }
 
         return $escaped;
-    }
-
-    /*
-     * Returns the postvars
-     * Returns a value or an array with all values
-     */
-
-    public static function atkGetPostVar($key = '')
-    {
-        if (empty($key) || $key == '') {
-            return $_REQUEST;
-        } else {
-            if (array_key_exists($key, $_REQUEST) && $_REQUEST[$key] != '') {
-                return $_REQUEST[$key];
-            }
-
-            return '';
-        }
     }
 
     /**

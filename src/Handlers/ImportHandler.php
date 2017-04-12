@@ -2,6 +2,7 @@
 
 namespace Sintattica\Atk\Handlers;
 
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Relations\OneToOneRelation;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Core\Tools;
@@ -28,23 +29,21 @@ class ImportHandler extends ActionHandler
      */
     public function action_import()
     {
-        global $ATK_VARS;
-
         //need to keep the postdata after a Attribute::AF_LARGE selection in the allfield
-        if (!isset($this->m_postvars['phase']) && isset($ATK_VARS['atkformdata'])) {
-            foreach ($ATK_VARS['atkformdata'] as $key => $value) {
+        if (!isset($this->m_postvars['phase']) && isset(Atk::$ATK_VARS['atkformdata'])) {
+            foreach (Atk::$ATK_VARS['atkformdata'] as $key => $value) {
                 $this->m_postvars[$key] = $value;
             }
         }
 
         $keys = [];
         //need to keep the selected item after an importerror
-        if (is_array($ATK_VARS['allFields'])) {
-            $keys = array_keys($ATK_VARS['allFields']);
+        if (is_array(Atk::$ATK_VARS['allFields'])) {
+            $keys = array_keys(Atk::$ATK_VARS['allFields']);
         }
         foreach ($keys as $key) {
-            if (!isset($ATK_VARS[$ATK_VARS['allFields'][$key].'_newsel'])) {
-                $ATK_VARS[$ATK_VARS['allFields'][$key].'_newsel'] = $ATK_VARS[$ATK_VARS['allFields'][$key]];
+            if (!isset(Atk::$ATK_VARS[Atk::$ATK_VARS['allFields'][$key].'_newsel'])) {
+                Atk::$ATK_VARS[Atk::$ATK_VARS['allFields'][$key].'_newsel'] = Atk::$ATK_VARS[Atk::$ATK_VARS['allFields'][$key]];
             }
         }
 

@@ -52,13 +52,12 @@ class IndexPage
      */
     public function __construct(Atk $atk)
     {
-        global $ATK_VARS;
         $this->atk = $atk;
         $this->m_page = Page::getInstance();
         $this->m_ui = Ui::getInstance();
         $this->m_output = Output::getInstance();
         $this->m_user = SecurityManager::atkGetUser();
-        $this->m_flags = array_key_exists('atkpartial', $ATK_VARS) ? Page::HTML_PARTIAL : Page::HTML_STRICT;
+        $this->m_flags = array_key_exists('atkpartial', Atk::$ATK_VARS) ? Page::HTML_PARTIAL : Page::HTML_STRICT;
     }
 
     /**
@@ -159,17 +158,16 @@ class IndexPage
      */
     public function atkGenerateDispatcher()
     {
-        global $ATK_VARS;
         $session = &SessionManager::getSession();
 
         if ($session['login'] != 1) {
             // no nodetype passed, or session expired
 
             $destination = '';
-            if (isset($ATK_VARS['atknodeuri']) && isset($ATK_VARS['atkaction'])) {
-                $destination = '&atknodeuri='.$ATK_VARS['atknodeuri'].'&atkaction='.$ATK_VARS['atkaction'];
-                if (isset($ATK_VARS['atkselector'])) {
-                    $destination .= '&atkselector='.$ATK_VARS['atkselector'];
+            if (isset(Atk::$ATK_VARS['atknodeuri']) && isset(Atk::$ATK_VARS['atkaction'])) {
+                $destination = '&atknodeuri='.Atk::$ATK_VARS['atknodeuri'].'&atkaction='.Atk::$ATK_VARS['atkaction'];
+                if (isset(Atk::$ATK_VARS['atkselector'])) {
+                    $destination .= '&atkselector='.Atk::$ATK_VARS['atkselector'];
                 }
             }
 
@@ -185,9 +183,9 @@ class IndexPage
         } else {
 
             // Create node
-            if (isset($ATK_VARS['atknodeuri'])) {
-                $node = $this->atk->atkGetNode($ATK_VARS['atknodeuri']);
-                $this->loadDispatchPage($ATK_VARS, $node);
+            if (isset(Atk::$ATK_VARS['atknodeuri'])) {
+                $node = $this->atk->atkGetNode(Atk::$ATK_VARS['atknodeuri']);
+                $this->loadDispatchPage(Atk::$ATK_VARS, $node);
             } else {
                 if (is_array($this->m_defaultDestination)) {
                     // using dispatch_url to redirect to the node

@@ -2,6 +2,7 @@
 
 namespace Sintattica\Atk\Security\Auth;
 
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Security\SecurityManager;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Core\Config;
@@ -32,9 +33,7 @@ class SspiAuth extends DbAuth
 {
     public function auth_sspi()
     {
-        global $ATK_VARS;
-
-        if (isset($ATK_VARS['atklogout'])) {
+        if (isset(Atk::$ATK_VARS['atklogout'])) {
             if ($this->validateUser() == SecurityManager::AUTH_SUCCESS) {
                 // On se reconnecte par defaut
                 $session = &SessionManager::getSession();
@@ -67,8 +66,7 @@ class SspiAuth extends DbAuth
 
     public function validateUser($user = '', $passwd = '')
     {
-        global $ATK_VARS;
-        $sspipath = $_SERVER ['REMOTE_USER'];
+        $sspipath = $_SERVER['REMOTE_USER'];
         $position = strpos($sspipath, '\\');
         $domain = substr($sspipath, 0, $position);
         $user = substr($sspipath, $position + 1, strlen($sspipath) - $position);
@@ -85,7 +83,7 @@ class SspiAuth extends DbAuth
         }
 
         $_SERVER['PHP_AUTH_USER'] = '';
-        $ATK_VARS['auth_user'] = '';
+        Atk::$ATK_VARS['auth_user'] = '';
         $db = Db::getInstance(Config::getGlobal('auth_database'));
         $query = $this->buildSelectUserQuery($user, Config::getGlobal('auth_usertable'), Config::getGlobal('auth_userfield'),
             Config::getGlobal('auth_sspi_accountfield'), Config::getGlobal('auth_accountdisablefield'), Config::getGlobal('auth_accountenableexpression'));
@@ -97,7 +95,7 @@ class SspiAuth extends DbAuth
         // Erreur : on affiche le domaine et l'utilisateur dans la fenetre de login
         if (count($recs) == 0) {
             $_SERVER['PHP_AUTH_USER'] = $domain.'.'.$user;
-            $ATK_VARS['auth_user'] = $domain.'.'.$user;
+            Atk::$ATK_VARS['auth_user'] = $domain.'.'.$user;
 
             return SecurityManager::AUTH_MISMATCH;
         }
@@ -105,9 +103,9 @@ class SspiAuth extends DbAuth
         if ((count($recs) == 1)) {
             // Mise jour des variables directement : l'utilisateur n'a pas ete renseigne donc on le renseigne
             $_SERVER['PHP_AUTH_USER'] = $user;
-            $ATK_VARS['auth_user'] = $user;
+            Atk::$ATK_VARS['auth_user'] = $user;
             $_SERVER['PHP_AUTH_PW'] = $domain;
-            $ATK_VARS['auth_pw'] = $domain;
+            Atk::$ATK_VARS['auth_pw'] = $domain;
 
             return SecurityManager::AUTH_SUCCESS;
         } else {

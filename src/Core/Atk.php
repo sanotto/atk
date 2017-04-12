@@ -23,6 +23,8 @@ class Atk
     public $g_nodeHandlers = [];
     public $g_nodeListeners = [];
     private $environment;
+    public static $ATK_VARS = null;
+
 
     public function __construct($environment, $basedir)
     {
@@ -57,9 +59,9 @@ class Atk
             register_shutdown_function('Sintattica\Atk\Core\Tools::atkFatalHandler');
         }
 
-        // Filter the atkselector REQUEST variable for blacklisted SQL (like UNIONs)
-        SqlWhereclauseBlacklistChecker::filter_request_where_clause('atkselector');
-        SqlWhereclauseBlacklistChecker::filter_request_where_clause('atkfilter');
+        // filter the request
+        SqlWhereclauseBlacklistChecker::filter_request_where_clause('atkselector', $_REQUEST);
+        SqlWhereclauseBlacklistChecker::filter_request_where_clause('atkfilter', $_REQUEST);
 
         // set locale
         $locale = Tools::atktext('locale', 'atk', '', '', true);
@@ -67,14 +69,13 @@ class Atk
             setlocale(LC_TIME, $locale);
         }
 
+        self::createAtkVars();
+
         $debug = 'Created a new Atk ('.self::VERSION.') instance.';
         $debug .= ' Environment: '.$environment.'.';
-
         if (isset($_SERVER['SERVER_NAME']) && isset($_SERVER['SERVER_ADDR'])) {
             $debug .= ' Server info: '.$_SERVER['SERVER_NAME'].' ('.$_SERVER['SERVER_ADDR'].')';
         }
-
-
         Tools::atkdebug($debug);
 
         //load modules
@@ -340,5 +341,28 @@ class Atk
     public function getEnvironment()
     {
         return $this->environment;
+    }
+
+    protected static function createAtkVars()
+    {
+        if(self::$ATK_VARS == null) {
+            //decode data
+            Tools::atkDataDecode($_REQUEST);
+            self::$ATK_VARS = array_merge($_GET, $_POST);
+            Tools::atkDataDecode(self::$ATK_VARS);
+
+            // inject $_FILES
+            $atkfiles = $_FILES;
+            Tools::atkDataDecode($atkfiles);
+            self::$ATK_VARS['atkfiles'] = $_FILES;
+            foreach ($atkfiles as $k => $v) {
+                self::$ATK_VARS[$k]['atkfiles'] = $v;
+            }
+
+            if (array_key_exists('atkfieldprefix', self::$ATK_VARS) && self::$ATK_VARS['atkfieldprefix'] != '') {
+                self::$ATK_VARS = self::$ATK_VARS[self::$ATK_VARS['atkfieldprefix']];
+            }
+        }
+        return self::$ATK_VARS;
     }
 }
