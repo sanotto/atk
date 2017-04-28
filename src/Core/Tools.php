@@ -524,22 +524,6 @@ class Tools
     }
 
     /**
-     * Wrapper for escapeSQL function.
-     *
-     * @param string $string The string to escape.
-     * @param bool $wildcard Set to true to convert wildcard chars ('%').
-     *                         False (default) will leave them unescaped.
-     *
-     * @return string A SQL compatible version of the input string.
-     */
-    public static function escapeSQL($string, $wildcard = false)
-    {
-        $db = Db::getInstance();
-
-        return $db->escapeSQL($string, $wildcard);
-    }
-
-    /**
      * Adds new element to error array en $record. When
      * $msg is empty the multilange error string is used.
      *
