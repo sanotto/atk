@@ -102,7 +102,7 @@ abstract class AbstractSearchHandler extends ActionHandler
         $db = $this->m_node->getDb();
         $query = "DELETE FROM {$this->m_table} WHERE nodetype = '%s' AND UPPER(name) = UPPER('%s') AND handlertype = '%s'";
 
-        $db->query(sprintf($query, $this->m_node->atkNodeUri(), Tools::escapeSQL($name), $this->getSearchHandlerType()));
+        $db->query(sprintf($query, $this->m_node->atkNodeUri(), $this->m_node->getDb()->escapeSQL($name), $this->getSearchHandlerType()));
         $db->commit();
     }
 
@@ -124,7 +124,7 @@ abstract class AbstractSearchHandler extends ActionHandler
         $this->forgetCriteria($name);
         $db = $this->m_node->getDb();
         $query = "INSERT INTO {$this->m_table} (nodetype, name, criteria, handlertype) VALUES('%s', '%s', '%s', '%s')";
-        $db->query(sprintf($query, $this->m_node->atkNodeUri(), Tools::escapeSQL($name), Tools::escapeSQL(serialize($criteria)),
+        $db->query(sprintf($query, $this->m_node->atkNodeUri(), $this->m_node->getDb()->escapeSQL($name), Tools::escapeSQL(serialize($criteria)),
             $this->getSearchHandlerType()));
         $db->commit();
     }
@@ -145,9 +145,9 @@ abstract class AbstractSearchHandler extends ActionHandler
         $db = $this->m_node->getDb();
         $query = "SELECT c.criteria FROM {$this->m_table} c WHERE c.nodetype = '%s' AND UPPER(c.name) = UPPER('%s') AND handlertype = '%s'";
 
-        Tools::atk_var_dump(sprintf($query, $this->m_node->atkNodeUri(), Tools::escapeSQL($name), $this->getSearchHandlerType()), 'loadCriteria query');
+        Tools::atk_var_dump(sprintf($query, $this->m_node->atkNodeUri(), $this->m_node->getDb()->escapeSQL($name), $this->getSearchHandlerType()), 'loadCriteria query');
 
-        list($row) = $db->getRows(sprintf($query, $this->m_node->atkNodeUri(), Tools::escapeSQL($name), $this->getSearchHandlerType()));
+        list($row) = $db->getRows(sprintf($query, $this->m_node->atkNodeUri(), $this->m_node->getDb()->escapeSQL($name), $this->getSearchHandlerType()));
         $criteria = $row == null ? null : unserialize($row['criteria']);
 
         Tools::atk_var_dump($criteria, 'loadCriteria criteria');
