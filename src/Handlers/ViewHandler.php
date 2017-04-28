@@ -85,7 +85,6 @@ class ViewHandler extends ViewEditBase
         $innerform = $this->viewForm($record, 'view');
 
         $params['activeTab'] = $tab;
-        $params['atkmessages'] = $this->sessionManager->getMessageQueue()->getMessages();
         $params['header'] = $this->invoke('viewHeader', $record);
         $params['title'] = $node->actionTitle($this->m_action, $record);
         $params['content'] = $node->tabulate('view', $innerform);

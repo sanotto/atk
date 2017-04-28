@@ -158,7 +158,6 @@ class AddHandler extends ActionHandler
         $node = $this->m_node;
 
         $params = $node->getDefaultActionParams();
-        $params['atkmessages'] = $this->sessionManager->getMessageQueue()->getMessages();
         $params['title'] = $node->actionTitle('add');
         $params['header'] = $this->invoke('addHeader', $record);
         $params['formstart'] = $this->getFormStart();

@@ -139,7 +139,6 @@ class AdminHandler extends ActionHandler
         }
 
         $params = [];
-        $params['atkmessages'] = $this->sessionManager->getMessageQueue()->getMessages();
         $params['header'] = $this->invoke('adminHeader').$this->getHeaderLinks();
         $params['list'] = $grid->render();
         $params['footer'] = $this->invoke('adminFooter');

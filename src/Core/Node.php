@@ -2907,6 +2907,7 @@ class Node
             'blocks' => $blocks,
             'title' => $ui->nodeTitle($this),
             'stacktrace' => $this->sessionManager->stackTrace(),
+            'atkmessages' => $this->sessionManager->getMessageQueue()->getMessages(),
         ));
     }
 

@@ -1,16 +1,5 @@
 {if isset($formstart)}{$formstart}{/if}
 <div>
-    {if count($atkmessages)}
-        <div class="row">
-            <div class="col-md-12">
-                <div class="atkmessages">
-                    {foreach from=$atkmessages item=message}
-                        <div class="atkmessages_{$message.type}">{$message.message}</div>
-                    {/foreach}
-                </div>
-            </div>
-        </div>
-    {/if}
     {if (isset($header) && !empty($header))}
         <div class="row list-header">
             <div class="col-md-12">{$header}</div>
