@@ -171,7 +171,6 @@ class RecordListCache
             } else {
                 throw new AtkErrorException("Couldn't open {$this->m_cacheid}_actionloader for writing!");
             }
-            Tools::atkdebug("New cache created for {$this->m_node->m_module}.{$this->m_node->m_type} and written to: $this->m_cacheid");
         }
     }
 
@@ -209,7 +208,6 @@ class RecordListCache
                 unlink($cachedir.$cachefile);
             }
         }
-        Tools::atkdebug("Cache for {$this->m_node->m_module}.{$this->m_node->m_type} cleared");
     }
 
     /**

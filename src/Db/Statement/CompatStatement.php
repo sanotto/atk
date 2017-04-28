@@ -33,7 +33,7 @@ class CompatStatement extends Statement
             throw new StatementException('Cannot connect to database.', StatementException::NO_DATABASE_CONNECTION);
         }
 
-        Tools::atkdebug('Prepare query: '.$this->_getParsedQuery());
+        $this->getDb()->getDebugger()->addDebug('Prepare query: '.$this->_getParsedQuery());
     }
 
     /**
@@ -46,10 +46,10 @@ class CompatStatement extends Statement
     protected function _bindParams($params)
     {
         $query = $this->_getParsedQuery();
-        Tools::atkdebug('Binding parameters for query: '.$this->_getParsedQuery());
+        $this->getDb()->getDebugger()->addDebug('Binding parameters for query: '.$this->_getParsedQuery());
 
         foreach (array_values($this->_getBindPositions()) as $i => $param) {
-            Tools::atkdebug("Bind param {$i}: ".($params[$param] === null ? 'NULL' : $params[$param]));
+            $this->getDb()->getDebugger()->addDebug("Bind param {$i}: ".($params[$param] === null ? 'NULL' : $params[$param]));
         }
 
         foreach (array_reverse($this->_getBindPositions(), true) as $position => $param) {

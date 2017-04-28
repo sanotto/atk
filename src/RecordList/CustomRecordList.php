@@ -139,8 +139,6 @@ class CustomRecordList extends RecordList
             $output = '<table border="1" cellspacing="0" cellpadding="2">'.$output.'</table>';
         }
 
-        Tools::atkdebug(Tools::atk_html_entity_decode($output));
-
         // To a File
         if (!array_key_exists('filename', $outputparams)) {
             $outputparams['filename'] = 'achievo';
