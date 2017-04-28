@@ -7,7 +7,6 @@
         </div>
     {/if}
     <div class="actionpageWrapper">
-        {stacktrace}
         {if count($stacktrace) > 1}
             <ol class="breadcrumb">
                 {foreach $stacktrace as $item}
