@@ -83,7 +83,7 @@ class HandlerManager
      */
     public function getHandler($action, Node $node)
     {
-        $this->debugger->addDebug('self::getHandler(); action: '.$action);
+        $this->debugger->addDebug('HandlerManager::getHandler(); action: '.$action);
 
         //check if a handler exists registered including the module name
         $handler = $this->getNodeHandler($node->atkNodeUri(), $action);
@@ -109,6 +109,7 @@ class HandlerManager
             $handler->setPostvars($node->m_postvars);
             $handler->setAction($action);
             $handler->setSessionManager($this->sessionManager);
+            $handler->setHandlerManager($this);
 
             //If we use a default handler we need to register it to this node because we might call it a second time.
             $this->debugger->addDebug('self::getHandler: Register default ActionHandler for '.$node->m_type." action: '".$action."'");

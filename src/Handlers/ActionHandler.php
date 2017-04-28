@@ -102,6 +102,9 @@ class ActionHandler
     /** @var  SessionManager $sessionManager */
     protected $sessionManager;
 
+    /** @var  HandlerManager $handlerManager */
+    protected $handlerManager;
+
     public function __construct(Debugger $debugger)
     {
         $this->debugger = $debugger;
@@ -110,6 +113,11 @@ class ActionHandler
     public function setSessionManager(SessionManager $sessionManager)
     {
         $this->sessionManager = $sessionManager;
+    }
+
+    public function setHandlerManager(HandlerManager $handlerManager)
+    {
+        $this->handlerManager = $handlerManager;
     }
 
     /**
