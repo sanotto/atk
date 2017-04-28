@@ -85,7 +85,7 @@ class AdminHandler extends ActionHandler
         // Reuse the atkAddHandler for the addPage.
         $node = $this->getNode()->getNodeManager()->getNode($this->invoke('getAddNodeType'));
 
-        $handler = $node->getHandler('add');
+        $handler = $this->handlerManager->getHandler('add', $node);
         $handler->setNode($node);
         $handler->setReturnBehaviour(self::ATK_ACTION_STAY); // have the save action stay on the admin page
         return $handler->invoke('addPage', $record);
