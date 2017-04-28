@@ -52,7 +52,6 @@ class IpUtils
     public static function ipStringFormat($ip)
     {
         if (!self::ipValidate($ip)) {
-            Tools::atkdebug('IpUtils::ipStringFormat() Invalid ip given');
 
             return;
         }
@@ -84,7 +83,6 @@ class IpUtils
     public static function ipLongFormat($ip)
     {
         if (!self::ipValidate($ip)) {
-            Tools::atkdebug('IpUtils::ipLongFormat() Invalid ip given');
 
             return;
         }

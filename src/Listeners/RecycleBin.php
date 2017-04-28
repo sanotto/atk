@@ -73,7 +73,6 @@ class RecycleBin extends TriggerListener
      */
     public function preDelete($record)
     {
-        Tools::atkdebug('delete performed, storing record in recyclebin');
 
         if (isset($this->_options['node'])) {
             $node = getNode($this->_options['node']);
@@ -94,7 +93,6 @@ class RecycleBin extends TriggerListener
             } else { // default behaviour: assume table with _bin appendix
                 $node->setTable($node->getTable().'_bin');
             }
-            Tools::atkdebug('adding record to recyclebin');
             $node->addDb($record);
         }
 
