@@ -143,8 +143,9 @@ class DeleteHandler extends ActionHandler
     protected function _doDeleteSession()
     {
         $selector = Tools::atkArrayNvl($this->m_postvars, 'atkselector', '');
+        $ss = $this->sessionManager->getSessionStoreFactory()->getSessionStore();
 
-        return SessionStore::getInstance()->deleteDataRowForSelector($selector);
+        return $ss->deleteDataRowForSelector($selector);
     }
 
     /**

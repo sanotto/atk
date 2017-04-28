@@ -82,8 +82,9 @@ class ViewEditBase extends ActionHandler
     protected function getRecordFromSession()
     {
         $selector = Tools::atkArrayNvl($this->m_node->m_postvars, 'atkselector', '');
+        $ss = $this->sessionManager->getSessionStoreFactory()->getSessionStore();
 
-        return SessionStore::getInstance()->getDataRowForSelector($selector);
+        return $ss->getDataRowForSelector($selector);
     }
 
     /**

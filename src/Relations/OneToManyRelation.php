@@ -402,7 +402,8 @@ class OneToManyRelation extends Relation
 
             // Make the grid use the OTM Session Grid Handler
             // which makes the grid get it's records from the session.
-            $handler = new OneToManyRelationSessionGridHandler($this->getSessionStoreKey());
+            $sessionStoreFactory = $this->getOwnerInstance()->getSessionManager()->getSessionStoreFactory();
+            $handler = new OneToManyRelationSessionGridHandler($this->getSessionStoreKey(), $sessionStoreFactory);
 
             $grid->setCountHandler(array($handler, 'countHandlerForAdd'));
             $grid->setSelectHandler(array($handler, 'selectHandlerForAdd'));
@@ -885,8 +886,10 @@ class OneToManyRelation extends Relation
         if (!$this->createDestination()) {
             return false;
         }
+        $key = $this->getSessionStoreKey();
+        $ss = $this->getOwnerInstance()->getSessionManager()->getSessionStoreFactory()->getSessionStore($key);
 
-        $rows = SessionStore::getInstance($this->getSessionStoreKey())->getData();
+        $rows = $ss->getData();
 
         foreach ($rows as $row) {
             $this->updateSessionAddFakeId($row, $this->getSessionAddFakeId(), $record);
@@ -894,7 +897,9 @@ class OneToManyRelation extends Relation
         }
 
         // after saving the rows, we can clear the sessionstore
-        SessionStore::getInstance($this->getSessionStoreKey())->setData(null);
+        $key = $this->getSessionStoreKey();
+        $ss = $this->getOwnerInstance()->getSessionManager()->getSessionStoreFactory()->getSessionStore($key);
+        $ss->setData(null);
 
         return true;
     }
