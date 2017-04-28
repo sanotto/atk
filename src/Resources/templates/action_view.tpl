@@ -3,14 +3,6 @@
         {$helplink}<br/>
     </div>
 {/if}
-{if count($atkmessages)}
-    <div class="atkmessages">
-        {foreach from=$atkmessages item=message}
-            <div class="atkmessages_{$message.type}">{$message.message}</div>
-        {/foreach}
-    </div>
-    <br/>
-{/if}
 {$header}
 <div id="action-content">
     {$content}

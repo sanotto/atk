@@ -153,7 +153,6 @@ class EditHandler extends ViewEditBase
         $node = $this->m_node;
 
         $params = $node->getDefaultActionParams();
-        $params['atkmessages'] = $this->sessionManager->getMessageQueue()->getMessages();
         $params['title'] = $node->actionTitle('edit', $record);
         $params['formstart'] = $this->getFormStart();
         $params['header'] = $this->invoke('editHeader', $record);

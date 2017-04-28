@@ -3,13 +3,6 @@
         {$helplink}<br/>
     </div>
 {/if}
-{if count($atkmessages)}
-    <div class="atkmessages">
-        {foreach from=$atkmessages item=message}
-            <div class="atkmessages_{$message.type}">{$message.message}</div>
-        {/foreach}
-    </div>
-{/if}
 {if isset($header)}<div>{$header}</div>{/if}
 {$formstart}
 <div> <!-- div added to enable nested forms -->
