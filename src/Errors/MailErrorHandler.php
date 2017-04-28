@@ -5,7 +5,6 @@ namespace Sintattica\Atk\Errors;
 use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Tools;
-use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Security\SecurityManager;
 
 /**
@@ -16,26 +15,30 @@ use Sintattica\Atk\Security\SecurityManager;
  */
 class MailErrorHandler extends ErrorHandlerBase
 {
-    protected function _wordwrap($line)
+    public static function &getSession()
     {
-        return wordwrap($line, 100, "\n", 1);
+        if (!isset($_SESSION[Config::getGlobal('identifier')]) || !is_array($_SESSION[Config::getGlobal('identifier')])) {
+            $_SESSION[Config::getGlobal('identifier')] = [];
+        }
+
+        return $_SESSION[Config::getGlobal('identifier')];
     }
 
     /**
      * Handle the error.
      *
      * @param string $errorMessage
-     * @param string $debugMessage
+     * @param array $debugMessage
      */
     public function handle($errorMessage, $debugMessage)
     {
-        $sessionManager = SessionManager::getInstance();
 
-        $sessionData = &SessionManager::getSession();
+        $sessionData = &self::getSession();
+        $namespace = 'default';
 
         $txt_app_title = Tools::atktext('app_title');
 
-        if ($this->params['mailto'] != '') { // only if enabled..
+        if ($this->params['mailto'] != '') {
             $subject = '['.$_SERVER['SERVER_NAME']."] $txt_app_title error";
 
             $defaultfrom = sprintf('%s <%s@%s>', $txt_app_title, Config::getGlobal('identifier', 'atk'), $_SERVER['SERVER_NAME']);
@@ -102,40 +105,39 @@ class MailErrorHandler extends ErrorHandlerBase
                 $body .= "Not known\n";
             }
 
-            if (is_object($sessionManager)) {
-                $body .= "\n\nATK SESSION\n".str_repeat('-', 70);
-                $body .= "\nNamespace: ".$sessionManager->getNameSpace()."\n";
-                if (isset($sessionData[$sessionManager->getNameSpace()]['stack'])) {
-                    $stack = $sessionData[$sessionManager->getNameSpace()]['stack'];
-                    for ($i = 0; $i < count($stack); ++$i) {
-                        $body .= "\nStack level $i:\n";
-                        $item = isset($stack[$i]) ? $stack[$i] : null;
-                        if (is_array($item)) {
-                            foreach ($item as $key => $value) {
-                                $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 30 - strlen($key))).' = '.var_export($value, 1))."\n";
-                            }
-                        }
-                    }
-                }
-                if (isset($sessionData[$sessionManager->getNameSpace()]['globals'])) {
-                    $ns_globals = $sessionData[$sessionManager->getNameSpace()]['globals'];
-                    if (count($ns_globals) > 0) {
-                        $body .= "\nNamespace globals:\n";
-                        foreach ($ns_globals as $key => $value) {
-                            $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 30 - strlen($key))).' = '.var_export($value, 1))."\n";
-                        }
-                    }
-                }
-                if (isset($sessionData['globals'])) {
-                    $globals = $sessionData['globals'];
-                    if (count($globals) > 0) {
-                        $body .= "\nGlobals:\n";
-                        foreach ($globals as $key => $value) {
+            $body .= "\n\nATK SESSION\n".str_repeat('-', 70);
+            $body .= "\nNamespace: ".$namespace."\n";
+            if (isset($sessionData[$namespace]['stack'])) {
+                $stack = $sessionData[$namespace]['stack'];
+                for ($i = 0; $i < count($stack); ++$i) {
+                    $body .= "\nStack level $i:\n";
+                    $item = isset($stack[$i]) ? $stack[$i] : null;
+                    if (is_array($item)) {
+                        foreach ($item as $key => $value) {
                             $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 30 - strlen($key))).' = '.var_export($value, 1))."\n";
                         }
                     }
                 }
             }
+            if (isset($sessionData[$namespace]['globals'])) {
+                $ns_globals = $sessionData[$namespace]['globals'];
+                if (count($ns_globals) > 0) {
+                    $body .= "\nNamespace globals:\n";
+                    foreach ($ns_globals as $key => $value) {
+                        $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 30 - strlen($key))).' = '.var_export($value, 1))."\n";
+                    }
+                }
+            }
+            if (isset($sessionData['globals'])) {
+                $globals = $sessionData['globals'];
+                if (count($globals) > 0) {
+                    $body .= "\nGlobals:\n";
+                    foreach ($globals as $key => $value) {
+                        $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 30 - strlen($key))).' = '.var_export($value, 1))."\n";
+                    }
+                }
+            }
+
 
             $body .= "\n\nSERVER INFORMATION\n".str_repeat('-', 70)."\n";
 
@@ -146,5 +148,10 @@ class MailErrorHandler extends ErrorHandlerBase
             //TODO: replace with some mailer object
             mail($this->params['mailto'], $subject, $body, "From: $from");
         }
+    }
+
+    protected function _wordwrap($line)
+    {
+        return wordwrap($line, 100, "\n", 1);
     }
 }
