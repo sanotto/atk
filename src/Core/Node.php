@@ -2903,10 +2903,10 @@ class Node
 
         $ui = $this->getUi();
 
-        // todo: overridable action templates
         return $ui->render('actionpage.tpl', array(
             'blocks' => $blocks,
             'title' => $ui->nodeTitle($this),
+            'stacktrace' => $this->sessionManager->stackTrace(),
         ));
     }
 
