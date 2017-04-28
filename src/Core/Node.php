@@ -14,7 +14,6 @@ use Sintattica\Atk\Security\SecurityManager;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Session\State;
 use Sintattica\Atk\Ui\Page;
-use Sintattica\Atk\Ui\PageBuilder;
 use Sintattica\Atk\Ui\Ui;
 use Sintattica\Atk\Utils\ActionListener;
 use Sintattica\Atk\Utils\Redirect;
@@ -2950,16 +2949,6 @@ class Node
     public function setPage(Page $page)
     {
         $this->m_page = $page;
-    }
-
-    /**
-     * Returns a new page builder instance.
-     *
-     * @return PageBuilder
-     */
-    public function createPageBuilder()
-    {
-        return new PageBuilder($this);
     }
 
     /**
