@@ -226,7 +226,8 @@ class SaveHandler extends ActionHandler
      */
     protected function storeRecordInSession(&$record)
     {
-        $result = SessionStore::getInstance()->addDataRow($record, $this->m_node->primaryKeyField());
+        $ss = $this->sessionManager->getSessionStoreFactory()->getSessionStore();
+        $result = $ss->addDataRow($record, $this->m_node->primaryKeyField());
 
         return $result !== false;
     }

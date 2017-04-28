@@ -3,20 +3,19 @@
 namespace Sintattica\Atk\Session;
 
 use Sintattica\Atk\Core\Tools;
+use Sintattica\Atk\Utils\Debugger;
 
 /**
- * Session storage singleton, given a key (or a key in the session)
+ * Session storage, given a key (or a key in the session)
  * stores records to the current session.
  */
 class SessionStore
 {
-    /**
-     * Instances of the session store, indexed by key.
-     *
-     * @var array
-     */
-    private static $_instances = [];
 
+    /** @var Debugger $debugger */
+    protected $debugger;
+    /** @var SessionManager $sessionManager */
+    protected $sessionManager;
     /**
      * Key to use.
      *
@@ -25,49 +24,19 @@ class SessionStore
     private $_key;
 
     /**
-     * Get the current instance for the session storage.
-     *
-     * @param mixed $key Key to use
-     * @param bool $reset Wether to reset the singleton
-     *
-     * @return SessionStore Storage
-     */
-    public static function getInstance($key = false, $reset = false)
-    {
-        if (!$key) {
-            $key = self::getKeyFromSession();
-        }
-        if (!isset(self::$_instances[$key]) || $reset) {
-            self::$_instances[$key] = new self($key, $reset);
-        }
-
-        return self::$_instances[$key];
-    }
-
-    /**
-     * Try to get the current key from the session.
-     *
-     * @return mixed Key to use, false if we don't have a key
-     */
-    private static function getKeyFromSession()
-    {
-        $sessionmanager = self::getSessionManager();
-        if (!$sessionmanager) {
-            return false;
-        } else {
-            return $sessionmanager->globalStackVar('atkstore_key');
-        }
-    }
-
-    /**
      * Create a new sessionstore.
      *
      * @param mixed $key Key to use
      * @param bool $reset Reset data
+     * @param Debugger $debugger
+     * @param SessionManager $sessionManager
      */
-    private function __construct($key, $reset = false)
+    public function __construct($key, $reset = false, Debugger $debugger, SessionManager $sessionManager)
     {
         $this->_key = $key;
+        $this->debugger = $debugger;
+        $this->sessionManager = $sessionManager;
+
         if ($reset) {
             $this->setData(array());
         }
@@ -95,7 +64,7 @@ class SessionStore
      */
     public function addDataRow($row, $primary_key_field)
     {
-        Tools::atk_var_dump($row,
+        $this->addVarDumpDebug($row,
             __CLASS__.'->'.__METHOD__.": Adding a new row to session store with primary key field '$primary_key_field' and key: ".$this->getKey());
         $data = $this->getData();
         if ($data === false) {
@@ -120,14 +89,14 @@ class SessionStore
      */
     public function getDataRowForSelector($selector)
     {
-        Tools::atk_var_dump($selector, __CLASS__.'->'.__METHOD__.': Getting row from session store with key: '.$this->getKey());
+        $this->addVarDumpDebug($selector, __CLASS__.'->'.__METHOD__.': Getting row from session store with key: '.$this->getKey());
         $data = $this->getData();
         if (!$data) {
             return false;
         }
 
-        $row_key = self::getRowKeyFromSelector($selector);
-        if (!self::isValidRowKey($row_key, $data)) {
+        $row_key = $this->getRowKeyFromSelector($selector);
+        if (!$this->isValidRowKey($row_key, $data)) {
             return false;
         }
 
@@ -150,8 +119,8 @@ class SessionStore
             return false;
         }
 
-        $row_key = self::getRowKeyFromSelector($selector);
-        if (!self::isValidRowKey($row_key, $data)) {
+        $row_key = $this->getRowKeyFromSelector($selector);
+        if (!$this->isValidRowKey($row_key, $data)) {
             return false;
         }
 
@@ -171,14 +140,14 @@ class SessionStore
      */
     public function deleteDataRowForSelector($selector)
     {
-        Tools::atk_var_dump($selector, __CLASS__.'->'.__METHOD__.': Deleting row from session store with key: '.$this->getKey());
+        $this->addVarDumpDebug($selector, __CLASS__.'->'.__METHOD__.': Deleting row from session store with key: '.$this->getKey());
         $data = $this->getData();
         if (!$data) {
             return false;
         }
 
-        $row_key = self::getRowKeyFromSelector($selector);
-        if (!self::isValidRowKey($row_key, $data)) {
+        $row_key = $this->getRowKeyFromSelector($selector);
+        if (!$this->isValidRowKey($row_key, $data)) {
             return false;
         }
 
@@ -187,21 +156,6 @@ class SessionStore
         $this->setData($data);
 
         return true;
-    }
-
-    /**
-     * Get the sessionmanager to use.
-     *
-     * @return mixed Sessionmanager or false if we don't have a session
-     */
-    protected static function getSessionManager()
-    {
-        $sessionmanager = SessionManager::getInstance();
-        if (!$sessionmanager) {
-            return false;
-        } else {
-            return $sessionmanager;
-        }
     }
 
     /**
@@ -215,12 +169,7 @@ class SessionStore
             return false;
         }
 
-        $sessionmanager = self::getSessionManager();
-        if (!$sessionmanager) {
-            return false;
-        }
-
-        $data = $sessionmanager->globalStackVar($this->_key);
+        $data = $this->sessionManager->globalStackVar($this->_key);
         if (!is_array($data)) {
             $data = [];
         }
@@ -241,14 +190,18 @@ class SessionStore
             return false;
         }
 
-        $sessionmanager = self::getSessionManager();
-        if (!$sessionmanager) {
-            return false;
-        }
-
-        $sessionmanager->globalStackVar($this->_key, $data);
+        $this->sessionManager->globalStackVar($this->_key, $data);
 
         return $data;
+    }
+
+    protected function addVarDumpDebug($a, $d)
+    {
+        ob_start();
+        var_dump($a);
+        $data = ob_get_contents();
+        $this->debugger->addDebug('vardump: '.($d != '' ? $d.' = ' : '').'<pre>'.$data.'</pre>');
+        ob_end_clean();
     }
 
     /**
@@ -260,7 +213,7 @@ class SessionStore
      *
      * @return mixed Key in negative int form or false if we failed to get the key
      */
-    private static function getRowKeyFromSelector($selector)
+    private function getRowKeyFromSelector($selector)
     {
         $selector = Tools::decodeKeyValuePair($selector);
         $selector_values = array_values($selector);
@@ -280,14 +233,14 @@ class SessionStore
      *
      * @return bool
      */
-    private static function isValidRowKey($rowKey, $data)
+    private function isValidRowKey($rowKey, $data)
     {
         if ($rowKey === false) {
-            Tools::atkwarning(__CLASS__.'->'.__METHOD__.': No row key selector found');
+            $this->debugger->addWarning(__CLASS__.'->'.__METHOD__.': No row key selector found');
 
             return false;
         } elseif (!array_key_exists($rowKey, $data)) {
-            Tools::atkwarning(__CLASS__.'->'.__METHOD__.': Row key not found in the data');
+            $this->debugger->addWarning(__CLASS__.'->'.__METHOD__.': Row key not found in the data');
 
             return false;
         }

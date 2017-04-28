@@ -2,8 +2,8 @@
 
 namespace Sintattica\Atk\Relations;
 
-use Sintattica\Atk\Session\SessionStore;
 use Sintattica\Atk\DataGrid\DataGrid;
+use Sintattica\Atk\Session\SessionStoreFactory;
 
 /**
  * The OTM Session Grid Handler
@@ -13,15 +13,18 @@ use Sintattica\Atk\DataGrid\DataGrid;
 class OneToManyRelationSessionGridHandler
 {
     private $_key;
+    private $sessionStoreFactory;
 
     /**
      * Create a OTM session grid handler.
      *
      * @param string $key
+     * @param SessionStoreFactory $sessionStoreFactory
      */
-    public function __construct($key)
+    public function __construct($key, SessionStoreFactory $sessionStoreFactory)
     {
         $this->_key = $key;
+        $this->sessionStoreFactory = $sessionStoreFactory;
     }
 
     /**
@@ -76,6 +79,8 @@ class OneToManyRelationSessionGridHandler
      */
     private function getRecordsFromSession()
     {
-        return SessionStore::getInstance($this->_key)->getData();
+        $ss = $this->sessionStoreFactory->getSessionStore($this->_key);
+
+        return $ss->getData();
     }
 }

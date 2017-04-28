@@ -276,8 +276,9 @@ class UpdateHandler extends ActionHandler
     private function updateRecordInSession($record)
     {
         $selector = Tools::atkArrayNvl($this->m_postvars, 'atkselector', '');
+        $ss = $this->sessionManager->getSessionStoreFactory()->getSessionStore();
 
-        return SessionStore::getInstance()->updateDataRowForSelector($selector, $record) !== false;
+        return $ss->updateDataRowForSelector($selector, $record) !== false;
     }
 
     /**

@@ -33,6 +33,9 @@ class SessionManager
     /** @var  MessageQueue $messageQueue */
     protected $messageQueue;
 
+    /** @var  SessionStoreFactory $sessionStoreFactory */
+    protected $sessionStoreFactory;
+
     /**
      * @var string
      */
@@ -132,6 +135,16 @@ class SessionManager
     public function getMessageQueue()
     {
         return $this->messageQueue;
+    }
+
+    public function setSessionStoreFactory(SessionStoreFactory $sessionStoreFactory)
+    {
+        $this->sessionStoreFactory = $sessionStoreFactory;
+    }
+
+    public function getSessionStoreFactory()
+    {
+        return $this->sessionStoreFactory;
     }
 
     /**
@@ -295,7 +308,7 @@ class SessionManager
      * If a value gets passed in a url, the following statement is useful:
      *
      * <code>
-     *   $view = SessionManager::getInstance()->stackVar("view");
+     *   $view = $sessionManager->stackVar("view");
      * </code>
      *
      * This statement makes sure that $view is always filled. If view is passed
@@ -405,7 +418,7 @@ class SessionManager
      * The method can be used to transparantly both store and retrieve the value.
      * If a value gets passed in a url, the following statement is useful:
      * <code>
-     *   $view = SessionManager::getInstance()->pageVar("view");
+     *   $view = $sessionManager->pageVar("view");
      * </code>
      * This statement makes sure that $view is always filled. If view is passed
      * in the url, it is stored as the new default stack value. If it's not

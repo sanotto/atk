@@ -22,10 +22,15 @@ services:
     calls:
       - [setNodeManager, ['@atk.node_manager']]
       - [setMessageQueue, ['@atk.session.message_queue']]
+      - [setSessionStoreFactory, ['@atk.session.sessionstore_factory']]
 
   atk.session.message_queue:
     class: Sintattica\Atk\Session\MessageQueue
     arguments: ['@atk.session_manager']
+
+  atk.session.sessionstore_factory:
+    class: Sintattica\Atk\Session\SessionStoreFactory
+    arguments: ['@atk.session_manager', '@atk.debugger']
 
   atk.ui.index_page:
     class: Sintattica\Atk\Ui\IndexPage
