@@ -4,6 +4,7 @@ namespace Sintattica\Atk\Session;
 
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Core\Config;
+use Sintattica\Atk\Errors\AtkErrorException;
 
 /**
  * The State manager.
@@ -95,6 +96,7 @@ class State
      * @param string $type The namespace from which to retrieve the value
      *
      * @return mixed The storage method type.
+     * @throws AtkErrorException
      */
     public static function set($key, $value, $type = 'cookie')
     {
@@ -108,7 +110,7 @@ class State
                 self::_set_using_session($key, $value);
                 break;
             default:
-                Tools::atkerror("set method don't exists");
+                throw new AtkErrorException("set method don't exists");
         }
     }
 

@@ -103,7 +103,7 @@ class DurationAttribute extends Attribute
                     if ($curhours == $h) {
                         $result .= 'selected';
                     }
-                    $result .= '>'.$h.' '.Tools::atktext('hours', 'atk');
+                    $result .= '>'.$h.' '.$this->getOwnerInstance()->getLanguage()->trans('hours', 'atk');
                     if ($this->m_resolution_min <= 60) {
                         ++$h;
                     } else {
@@ -119,7 +119,7 @@ class DurationAttribute extends Attribute
                     if ($curminutes == $m) {
                         $result .= 'selected';
                     }
-                    $result .= '>'.$m.' '.Tools::atktext('minutes', 'atk');
+                    $result .= '>'.$m.' '.$this->getOwnerInstance()->getLanguage()->trans('minutes', 'atk');
                     if ($this->m_resolution_min <= 1) {
                         ++$m;
                     } else {

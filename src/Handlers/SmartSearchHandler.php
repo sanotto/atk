@@ -182,7 +182,7 @@ class SmartSearchHandler extends AbstractSearchHandler
 
         $params = array('atksmartsearch' => $criteria);
         $url = Tools::dispatch_url($this->m_node->atkNodeUri(), 'admin', $params);
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
         $this->m_node->redirect($sm->sessionUrl($url, $sm->atkLevel() == 0 ? SessionManager::SESSION_REPLACE : SessionManager::SESSION_BACK));
     }
 
@@ -394,7 +394,7 @@ class SmartSearchHandler extends AbstractSearchHandler
     public function getCriteriumField($id, $path, &$scriptCode)
     {
         $prefix = "criteria[{$id}][attrs]";
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         for ($i = 0, $_i = count($path); $i < $_i; ++$i) {
             $entry = &$path[$i];
@@ -571,7 +571,7 @@ class SmartSearchHandler extends AbstractSearchHandler
      */
     public function getResetCriteria()
     {
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         return $sm->sessionUrl(Tools::dispatch_url($this->m_node->atkNodeUri(), $this->m_action), SessionManager::SESSION_REPLACE);
     }
@@ -587,7 +587,7 @@ class SmartSearchHandler extends AbstractSearchHandler
     public function smartSearchForm($name = '', $criteria = array())
     {
         $ui = $this->getUi();
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         $params = [];
 
@@ -600,7 +600,7 @@ class SmartSearchHandler extends AbstractSearchHandler
         $params['saved_criteria'] = $this->getSavedCriteria($name);
 
         $params['criteria'] = [];
-        Tools::atkdebug('criteria smartSearchForm: '.print_r($criteria, true));
+        $this->debugger->addDebug('criteria smartSearchForm: '.print_r($criteria, true));
         foreach ($criteria as $i => $criterium) {
             $params['criteria'][] = $this->getCriterium($i, $criterium);
         }
@@ -625,7 +625,7 @@ class SmartSearchHandler extends AbstractSearchHandler
         $node = $this->m_node;
         $page = $this->getPage();
         $ui = $this->getUi();
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         $page->register_script(Config::getGlobal('assets_url').'javascript/tools.js');
         $page->register_script(Config::getGlobal('assets_url').'javascript/class.atksmartsearchhandler.js');

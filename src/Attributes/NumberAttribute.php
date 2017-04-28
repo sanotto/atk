@@ -6,7 +6,6 @@ use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\DataGrid\DataGrid;
 use Sintattica\Atk\Db\Query;
-use Sintattica\Atk\Ui\Page;
 
 /**
  * The NumberAttribute can be used for numeric values.
@@ -46,8 +45,16 @@ class NumberAttribute extends Attribute
         parent::__construct($name, $flags);
 
         $this->m_decimals = $decimals;
-        $this->m_decimalseparator = Tools::atktext(self::SEPARATOR_DECIMAL, 'atk');
-        $this->m_thousandsseparator = Tools::atktext(self::SEPARATOR_THOUSAND, 'atk');
+
+    }
+
+    public function init()
+    {
+        parent::init();
+        $language = $this->getOwnerInstance()->getLanguage();
+
+        $this->m_decimalseparator = $language->trans(self::SEPARATOR_DECIMAL, 'atk');
+        $this->m_thousandsseparator = $language->trans(self::SEPARATOR_THOUSAND, 'atk');
     }
 
     /**
@@ -129,7 +136,7 @@ class NumberAttribute extends Attribute
 
             return $result;
         } else {
-            Tools::atkdebug('Warning attribute '.$this->m_name.' has no proper hide method!');
+            $this->getOwnerInstance()->getDebugger()->addDebug('Warning attribute '.$this->m_name.' has no proper hide method!');
         }
     }
 
@@ -152,7 +159,7 @@ class NumberAttribute extends Attribute
         }
 
         if ($decimal_separator == $thousands_separator) {
-            Tools::atkwarning('invalid thousandsseparator. identical to the decimal_separator');
+            $this->getOwnerInstance()->getDebugger()->addWarning('invalid thousandsseparator. identical to the decimal_separator');
             $thousands_separator = '';
         }
 
@@ -268,7 +275,7 @@ class NumberAttribute extends Attribute
         $thousandsSeparator = ($this->m_use_thousands_separator && !in_array($mode, array('add', 'edit'))) ? $thousandsSeparator : '';
 
         if ($decimalSeparator == $thousandsSeparator) {
-            Tools::atkwarning('invalid thousandsseparator. identical to the decimal_separator');
+            $this->getOwnerInstance()->getDebugger()->addWarning('invalid thousandsseparator. identical to the decimal_separator');
             $thousandsSeparator = '';
         }
 
@@ -505,7 +512,7 @@ class NumberAttribute extends Attribute
     {
         $id = $this->getHtmlId($fieldprefix);
         $name = $this->getHtmlName($fieldprefix);
-        
+
         if (count($this->m_onchangecode)) {
             $onchange = 'onChange="'.$id.'_onChange(this);"';
             $this->_renderChangeHandler($fieldprefix);
@@ -546,7 +553,7 @@ class NumberAttribute extends Attribute
         $result .= ' />';
 
         if (is_array($this->touchspin)) {
-            $page = Page::getInstance();
+            $page = $this->getOwnerInstance()->getPage();
             $base = Config::getGlobal('assets_url') . 'lib/bootstrap-touchspin/';
             $page->register_script($base . 'jquery.bootstrap-touchspin.min.js');
             $page->register_style($base . 'jquery.bootstrap-touchspin.min.css');
@@ -605,7 +612,7 @@ class NumberAttribute extends Attribute
             $result .= '<input type="text" id="'.$id.'" '.$class.' name="'.$name.'[from]" value="'.htmlentities($valueFrom).'"'.($searchsize > 0 ? ' size="'.$searchsize.'"' : '').'>';
 
 
-            $result .= ' ('.Tools::atktext('until').' <input type="text" id="'.$id.'" class="form-control '.get_class($this).'" name="'.$name.'[to]" value="'.htmlentities($valueTo).'"'.($searchsize > 0 ? ' size="'.$searchsize.'"' : '').'>)';
+            $result .= ' ('.$this->getOwnerInstance()->getLanguage()->trans('until').' <input type="text" id="'.$id.'" class="form-control '.get_class($this).'" name="'.$name.'[to]" value="'.htmlentities($valueTo).'"'.($searchsize > 0 ? ' size="'.$searchsize.'"' : '').'>)';
             $result .= '</div>';
         }
 

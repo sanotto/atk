@@ -3,7 +3,6 @@
 namespace Sintattica\Atk\Attributes;
 
 use Sintattica\Atk\Core\Config;
-use Sintattica\Atk\Ui\Page;
 
 class ColorPickerAttribute extends Attribute
 {
@@ -28,7 +27,7 @@ class ColorPickerAttribute extends Attribute
     {
         $htmlId = $this->getHtmlId($fieldprefix).'_group';
 
-        $page = Page::getInstance();
+        $page = $this->getOwnerInstance()->getPage();
         $base = Config::getGlobal('assets_url').'lib/bootstrap-colorpicker/dist/';
 
         $page->register_script($base.'js/bootstrap-colorpicker.min.js');

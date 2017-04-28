@@ -4,9 +4,7 @@ namespace Sintattica\Atk\Listeners;
 
 use Sintattica\Atk\Utils\TriggerListener;
 use Sintattica\Atk\Core\Tools;
-use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Attributes\Attribute;
-use Sintattica\Atk\Core\Node;
 
 /**
  * This file is part of the ATK Framework distribution.
@@ -23,12 +21,12 @@ use Sintattica\Atk\Core\Node;
  */
 
 /**
- * The atkRecycleBin is a generic recycle bin for records. You can add it
+ * The RecycleBin is a generic recycle bin for records. You can add it
  * to any node and if a record from that node will get deleted,
- * atkRecycleBin will kick in and transfer the record to the recyclebin.
+ * RecycleBin will kick in and transfer the record to the recyclebin.
  *
  * There are 2 modes of operation. You can build your own recyclebin node,
- * and atkRecycleBin will use that to store the deleted record.
+ * and RecycleBin will use that to store the deleted record.
  *
  * Alternatively, you can skip creating a node, and just create a table
  * that is identical to the one you're deleting records from.
@@ -63,6 +61,7 @@ class RecycleBin extends TriggerListener
     public function __construct($options = array())
     {
         $this->_options = $options;
+        die('RecycleBin must be refactored for ???->getNode()');
     }
 
     /**
@@ -77,8 +76,7 @@ class RecycleBin extends TriggerListener
         Tools::atkdebug('delete performed, storing record in recyclebin');
 
         if (isset($this->_options['node'])) {
-            $atk = Atk::getInstance();
-            $node = $atk->atkGetNode($this->_options['node']);
+            $node = getNode($this->_options['node']);
             $node->addDb($record);
         } else {
             $node = clone $this->m_node;

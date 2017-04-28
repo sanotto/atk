@@ -25,7 +25,7 @@ class CopyHandler extends ActionHandler
      */
     public function nodeCopy()
     {
-        Tools::atkdebug('CopyHandler::nodeCopy()');
+        $this->debugger->addDebug('CopyHandler::nodeCopy()');
         $recordset = $this->m_node->select($this->m_postvars['atkselector'])->mode('copy')->getAllRows();
         $db = $this->m_node->getDb();
         if (count($recordset) > 0) {
@@ -37,10 +37,10 @@ class CopyHandler extends ActionHandler
             }
 
             if (!$this->m_node->copyDb($recordset[0])) {
-                Tools::atkdebug('node::action_copy() -> Error');
+                $this->debugger->addDebug('node::action_copy() -> Error');
                 $db->rollback();
                 $location = $this->m_node->feedbackUrl('save', self::ACTION_FAILED, $recordset[0], $db->getErrorMsg());
-                Tools::atkdebug('node::action_copy() -> Redirect');
+                $this->debugger->addDebug('node::action_copy() -> Redirect');
                 $this->m_node->redirect($location);
             } else {
                 $db->commit();

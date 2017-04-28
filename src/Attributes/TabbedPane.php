@@ -4,6 +4,7 @@ namespace Sintattica\Atk\Attributes;
 
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Core\Config;
+use Sintattica\Atk\Errors\AtkErrorException;
 use Sintattica\Atk\Handlers\ViewEditBase;
 
 /**
@@ -144,6 +145,7 @@ class TabbedPane extends Attribute
      * @param string $fieldprefix the fieldprefix
      *
      * @return array fields
+     * @throws AtkErrorException
      */
     public function _addToEditArray($mode, &$arr, &$defaults, &$error, $fieldprefix)
     {
@@ -180,7 +182,7 @@ class TabbedPane extends Attribute
                     $fields['fields'][] = $entry;
                 }
             } else {
-                Tools::atkerror("Attribute $name not found!");
+                throw new AtkErrorException("Attribute $name not found!");
             }
         }
         /* check for errors */
@@ -347,7 +349,7 @@ class TabbedPane extends Attribute
                     $fields[] = $tplfield;
                 }
             } else {
-                Tools::atkerror("Attribute $name not found!");
+                throw new AtkErrorException("Attribute $name not found!");
             }
         }
         $innerform = $ui->render($node->getTemplate('view', $record, $tab), array('fields' => $fields));
@@ -413,7 +415,7 @@ class TabbedPane extends Attribute
 
         foreach ($this->m_attribsList as $attrib => $tab) {
             $newtab = [];
-            $newtab['title'] = Tools::atktext(array("tab_$tab", $tab), $node->m_module, $node->m_type);
+            $newtab['title'] = $this->getOwnerInstance()->getLanguage()->trans(array("tab_$tab", $tab), $node->m_module, $node->m_type);
             $newtab['attribute'] = $attrib;
             $newtab['selected'] = ($active_tab == $tab);
             $result["tabbedPaneTab{$tab}"] = $newtab;

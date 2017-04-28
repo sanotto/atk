@@ -155,17 +155,17 @@ class BoolAttribute extends Attribute
         $name = $this->getSearchFieldName($fieldprefix);
 
         $result = '<select id="'.$id.'" name="'.$name.'" class="form-control select-standard">';
-        $result .= '<option value="">'.Tools::atktext('search_all', 'atk').'</option>';
+        $result .= '<option value="">'.$this->getOwnerInstance()->getLanguage()->trans('search_all', 'atk').'</option>';
         $result .= '<option value="0" ';
         if (is_array($record) && $record[$this->fieldName()] === '0') {
             $result .= 'selected';
         }
-        $result .= '>'.Tools::atktext('no', 'atk').'</option>';
+        $result .= '>'.$this->getOwnerInstance()->getLanguage()->trans('no', 'atk').'</option>';
         $result .= '<option value="1" ';
         if (is_array($record) && $record[$this->fieldName()] === '1') {
             $result .= 'selected';
         }
-        $result .= '>'.Tools::atktext('yes', 'atk').'</option>';
+        $result .= '>'.$this->getOwnerInstance()->getLanguage()->trans('yes', 'atk').'</option>';
         $result .= '</select>';
 
         return $result;
@@ -306,7 +306,7 @@ class BoolAttribute extends Attribute
             $result = '<input type="hidden" name="'.$this->getHtmlName($fieldprefix).'" value="'.($this->getValue($record) ? '1' : '0').'">';
             return $result;
         } else {
-            Tools::atkdebug('Warning attribute '.$this->m_name.' has no proper hide method!');
+            $this->getOwnerInstance()->getDebugger()->addDebug('Warning attribute '.$this->m_name.' has no proper hide method!');
         }
     }
 

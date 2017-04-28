@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Core;
 
 use Sintattica\Atk\Attributes\Attribute;
+use Sintattica\Atk\Errors\AtkErrorException;
 
 /**
  * Validator for records, based on node definition.
@@ -41,7 +42,7 @@ class NodeValidator
     /**
      * constructor.
      */
-    public function atkNodeValidator()
+    public function __construct()
     {
     }
 
@@ -104,8 +105,6 @@ class NodeValidator
             $this->setMode($mode);
         }
 
-        Tools::atkdebug('validate() with mode '.$this->m_mode.' for node '.$this->m_nodeObj->atkNodeUri());
-
         // set the record
         $record = &$this->m_record;
 
@@ -126,11 +125,6 @@ class NodeValidator
                             Tools::atkTriggerError($record, $p_attrib, 'error_primarykey_exists');
                         }
                     }
-                }
-
-                // if no root elements may be added to the tree, then every record needs to have a parent!
-                if ($p_attrib->hasFlag(Attribute::AF_PARENT) && $this->m_nodeObj->hasFlag(TreeNode::NF_TREE_NO_ROOT_ADD) && $this->m_nodeObj->m_action == 'save') {
-                    $p_attrib->m_flags |= Attribute::AF_OBLIGATORY;
                 }
 
                 // validate obligatory fields (but not the auto_increment ones, because they don't have a value yet)
@@ -196,6 +190,7 @@ class NodeValidator
      * Errors that are found are stored in the $record parameter.
      *
      * @param array $record The record to validate
+     * @throws AtkErrorException
      */
     public function validateUniqueFieldSets(&$record)
     {
@@ -224,7 +219,7 @@ class NodeValidator
                         }
                     }
                 } else {
-                    Tools::atkerror("Field $field is mentioned in uniquefieldset but does not exist in ".$this->m_nodeObj->atkNodeUri());
+                    throw new AtkErrorException("Field $field is mentioned in uniquefieldset but does not exist in ".$this->m_nodeObj->atkNodeUri());
                 }
             }
 

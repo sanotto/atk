@@ -1,0 +1,115 @@
+imports:
+  - { resource: ./config.yml }
+
+services:
+  atk.security_manager:
+    class: Sintattica\Atk\Security\SecurityManager
+    arguments:
+      - '@atk.ui.page'
+      - '@atk.ui.ui'
+      - '@atk.ui.output'
+      - '@atk.debugger'
+      - '@atk.db.db'
+      - '%atk.security.authentication%'
+      - '%atk.security.authorization%'
+      - '%atk.security.securityscheme%'
+    calls:
+      - [setSessionManager, ['@atk.session_manager']]
+
+  atk.session_manager:
+    class: Sintattica\Atk\Session\SessionManager
+    arguments: ['default', true, '@atk.ui.ui', '@atk.debugger', '@atk.utils.redirect']
+    calls:
+      - [setNodeManager, ['@atk.node_manager']]
+      - [setMessageQueue, ['@atk.session.message_queue']]
+
+  atk.session.message_queue:
+    class: Sintattica\Atk\Session\MessageQueue
+    arguments: ['@atk.session_manager']
+
+  atk.ui.index_page:
+    class: Sintattica\Atk\Ui\IndexPage
+    arguments:
+      - '@atk.ui.page'
+      - '@atk.ui.ui'
+      - '@atk.ui.output'
+      - '@atk.menu'
+      - '@atk.security_manager'
+      - '@atk.language'
+      - '@atk.debugger'
+      - '@atk.node_manager'
+      - '@atk.session_manager'
+
+  atk.ui.page:
+    class: Sintattica\Atk\Ui\Page
+    arguments: ['@atk.ui.ui', '@atk.language']
+
+  atk.ui.ui:
+    class: Sintattica\Atk\Ui\Ui
+    arguments: ['@atk.ui.smarty', '@atk.debugger']
+
+  atk.ui.output:
+    class: Sintattica\Atk\Ui\Output
+    arguments: ['@atk.debugger']
+
+  atk.menu:
+    class: Sintattica\Atk\Core\Menu
+    arguments: ['@atk.ui.page', '@atk.security_manager', '@atk.language']
+
+  atk.ui.smarty_factory:
+    class: Sintattica\Atk\Ui\SmartyFactory
+
+  atk.ui.smarty:
+    class: \Smarty
+    factory: 'atk.ui.smarty_factory:createSmarty'
+    arguments: ['@atk.debugger', '%atk.template.compile_dir%', '%atk.template.template_dir%', '%atk.template.force_compile%']
+
+  atk.debugger:
+    class: Sintattica\Atk\Utils\Debugger
+    arguments: ['%atk.debug.level%', '%atk.debug.log%']
+
+  atk.db.factory:
+    class: Sintattica\Atk\Db\DbFactory
+    arguments: ['%atk.db.db_config%', '@atk.debugger']
+
+  atk.db.db:
+    class: Sintattica\Atk\Db\Db
+    factory: 'atk.db.factory:getDb'
+
+  atk.tools:
+    class: Sintattica\Atk\Core\Tools
+
+  atk.language:
+    class: Sintattica\Atk\Core\Language
+    arguments: ['@atk.debugger']
+    calls:
+      - [setModuleManager, ['@atk.module_manager']]
+
+  atk.handler_manager:
+    class: Sintattica\Atk\Handlers\HandlerManager
+    arguments: ['@atk.debugger', '@atk.session_manager']
+
+  atk.utils.redirect:
+    class: Sintattica\Atk\Utils\Redirect
+    arguments: ['%atk.debug.level%', '@atk.debugger', '@atk.ui.output']
+
+  atk.error_manager:
+    class: Sintattica\Atk\Errors\ErrorManager
+    arguments: ['@atk.debugger', '@atk.ui.output']
+
+  atk.node_manager:
+    class: Sintattica\Atk\Core\NodeManager
+    arguments:
+       - '@atk.db.db'
+       - '@atk.debugger'
+       - '@atk.utils.redirect'
+       - '@atk.ui.page'
+       - '@atk.language'
+    calls:
+       - [setSessionManager, ['@atk.session_manager']]
+       - [setHandlerManager, ['@atk.handler_manager']]
+       - [setSecurityManager, ['@atk.security_manager']]
+
+  atk.module_manager:
+    class: Sintattica\Atk\Core\ModuleManager
+    arguments: ['@atk.debugger', '@atk.node_manager', '@atk.menu']

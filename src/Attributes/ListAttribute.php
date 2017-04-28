@@ -388,7 +388,7 @@ class ListAttribute extends Attribute
         $selectOptions['minimum-results-for-search'] = 10;
         $selectOptions['with-empty-value'] = '';
         if ($isMultiple) {
-            $selectOptions['placeholder'] = Tools::atktext('search_all');
+            $selectOptions['placeholder'] = $this->getOwnerInstance()->getLanguage()->trans('search_all');
         }
 
         //width always auto
@@ -411,13 +411,13 @@ class ListAttribute extends Attribute
         }
 
         $selected = (!$isMultiple && $selValues[0] == '') ? ' selected' : '';
-        $option = Tools::atktext('search_all');
+        $option = $this->getOwnerInstance()->getLanguage()->trans('search_all');
         $result .= sprintf('<option value=""%s>%s</option>', $selected, $option);
 
         // "none" option
         if (!$this->hasFlag(self::AF_OBLIGATORY) && !$this->hasFlag(self::AF_LIST_NO_NULL_ITEM)) {
             $selected = Tools::atk_in_array('__NONE__', $selValues) ? ' selected' : '';
-            $option = Tools::atktext('search_none');
+            $option = $this->getOwnerInstance()->getLanguage()->trans('search_none');
             $result .= sprintf('<option value="__NONE__"%s>%s</option>', $selected, $option);
         }
 
@@ -586,7 +586,7 @@ class ListAttribute extends Attribute
                 return $values[$i];
             }
 
-            if (strtolower(Tools::atktext($stringvalue)) == strtolower($option)) {
+            if (strtolower($this->getOwnerInstance()->getLanguage()->trans($stringvalue)) == strtolower($option)) {
                 return $values[$i];
             }
             ++$i;

@@ -6,6 +6,7 @@ use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Core\Atk;
+use Sintattica\Atk\Utils\Debugger;
 
 /**
  * Utility class for rendering boxes, lists, tabs or other templates.
@@ -14,19 +15,21 @@ use Sintattica\Atk\Core\Atk;
  */
 class Ui
 {
-    /*
-     * Smarty instance, initialised by constructor
-     * @access private
-     * @var SmartyProvider
-     */
-    public $m_smarty = null;
+    protected $m_smarty = null;
+    protected $debugger;
+
+    protected static $s_instance = null;
 
     /**
-     * Ui constructor, initialises Smarty and Theme instance.
+     * Ui constructor
+     * @param \Smarty $smarty
+     * @param Debugger $debugger
      */
-    public function __construct()
+    public function __construct(\Smarty $smarty, Debugger $debugger)
     {
-        $this->m_smarty = SmartyProvider::getInstance();
+        $this->m_smarty = $smarty;
+        $this->debugger = $debugger;
+        self::$s_instance = $this;
     }
 
     /**
@@ -36,14 +39,7 @@ class Ui
      */
     public static function getInstance()
     {
-        static $s_instance = null;
-
-        if ($s_instance == null) {
-            Tools::atkdebug('Creating a new Ui instance');
-            $s_instance = new self();
-        }
-
-        return $s_instance;
+        return self::$s_instance;
     }
 
     /**
@@ -110,9 +106,6 @@ class Ui
      */
     public function renderTabs($vars, $module = '')
     {
-        $page = Page::getInstance();
-        $page->register_script(Config::getGlobal('assets_url').'javascript/tools.js');
-
         return $this->render('tabs.tpl', $vars, $module);
     }
 
@@ -133,7 +126,7 @@ class Ui
     {
         $result = $this->renderSmarty($name, $vars);
 
-        if (Config::getGlobal('debug') >= 3) {
+        if ($this->debugger->getDebugLevel() >= 3) {
             $result = "\n<!-- START [{$name}] -->\n".$result."\n<!-- END [{$name}] -->\n";
         }
 
@@ -160,30 +153,7 @@ class Ui
     }
 
     /**
-     * Return the title to render.
-     *
-     * @param string $module the module in which to look
-     * @param string $nodetype the nodetype of the action
-     * @param string $action the action that we are trying to find a title for
-     * @param bool $actiononly wether or not to return a name of the node
-     *                           if we couldn't find a specific title
-     *
-     * @return string the title for the action
-     */
-    public function title($module, $nodetype, $action = null, $actiononly = false)
-    {
-        if ($module == null || $nodetype == null) {
-            return '';
-        }
-        $atk = Atk::getInstance();
-
-        return $this->nodeTitle($atk->atkGetNode($module.'.'.$nodetype), $action, $actiononly);
-    }
-
-    /**
      * This function returns a suitable title text for an action.
-     * Example: echo $ui->title("users", "employee", "edit"); might return:
-     *          'Edit an existing employee'.
      *
      * @param Node $node the node to get the title from
      * @param string $action the action that we are trying to find a title for
@@ -192,7 +162,7 @@ class Ui
      *
      * @return string the title for the action
      */
-    public function nodeTitle($node, $action = null, $actiononly = false)
+    public function nodeTitle(Node $node, $action = null, $actiononly = false)
     {
         if ($node == null) {
             return '';

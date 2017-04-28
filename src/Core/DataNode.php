@@ -64,7 +64,7 @@ class DataNode extends Node
      */
     public function select($selector = null, $order = null, $limit = null)
     {
-        Tools::atkdebug(get_class($this).'::select('.$selector.')');
+        $this->debugger->addDebug(get_class($this).'::select('.$selector.')');
 
         if ($order == null) {
             $order = $this->getOrder();
@@ -79,7 +79,7 @@ class DataNode extends Node
         );
 
         $result = $this->findData($params);
-        Tools::atkdebug('Result '.get_class($this).'::select('.$selector.') => '.count($result).' row(s)');
+        $this->debugger->addDebug('Result '.get_class($this).'::select('.$selector.') => '.count($result).' row(s)');
 
         return $result;
     }

@@ -131,14 +131,17 @@ class Config
     {
         $config = self::getConfigValues(self::getGlobal('application_config_dir').$section.'.php');
 
-        $app = Atk::getInstance();
-        if ($app->isModule($section)) {
-            $dir = $app->moduleDir($section).self::getGlobal('configdirname').'/';
-            if (is_dir($dir)) {
-                $module_configs = self::getConfigValues($dir.$section.'.php');
-                $config = array_merge($module_configs, $config);
-            }
-        }
+        //TODO: refactor getConfigForSection!!!
+
+
+//        $app = Atk::getInstance();
+//        if ($app->isModule($section)) {
+//            $dir = $app->moduleDir($section).self::getGlobal('configdirname').'/';
+//            if (is_dir($dir)) {
+//                $module_configs = self::getConfigValues($dir.$section.'.php');
+//                $config = array_merge($module_configs, $config);
+//            }
+//        }
 
         return $config;
     }

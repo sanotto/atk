@@ -110,11 +110,7 @@ class TmpFile
     public function readFile()
     {
         if ($this->exists()) {
-            if (function_exists('file_get_contents')) {
-                return file_get_contents($this->getPath());
-            } else {
-                return implode(null, $this->read());
-            }
+            return file_get_contents($this->getPath());
         }
 
         return false;

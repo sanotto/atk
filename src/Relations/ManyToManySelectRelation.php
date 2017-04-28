@@ -373,7 +373,7 @@ class ManyToManySelectRelation extends ManyToManyRelation
         if (method_exists($this, $actionMethod)) {
             return $this->$actionMethod($record);
         } else {
-            Tools::atkwarning('Missing '.$actionMethod.' method on manytomanyselectrelation. ');
+            $this->getOwnerInstance()->getDebugger()->addWarning('Missing '.$actionMethod.' method on manytomanyselectrelation. ');
         }
     }
 
@@ -381,7 +381,7 @@ class ManyToManySelectRelation extends ManyToManyRelation
     {
         $filter = $this->parseFilter($this->getManyToOneRelation()->m_destinationFilter, $record);
         $params = array_merge($params, array('atkfilter' => $filter, 'atkpkret' => $this->getHtmlId($fieldprefix).'_newsel'));
-        $link = Tools::href(Tools::dispatch_url($this->m_destination, 'add', $params), $this->getAddLabel(), SessionManager::SESSION_NESTED, true,
+        $link = $this->getOwnerInstance()->getSessionManager()->href(Tools::dispatch_url($this->m_destination, 'add', $params), $this->getAddLabel(), SessionManager::SESSION_NESTED, true,
             'class="atkmanytomanyselectrelation-link"');
 
         return $link;
@@ -396,7 +396,7 @@ class ManyToManySelectRelation extends ManyToManyRelation
      */
     protected function getEditActionLink($record)
     {
-        return Tools::href(Tools::dispatch_url($this->getDestination()->atkNodeUri(), 'edit',
+        return $this->getOwnerInstance()->getSessionManager()->href(Tools::dispatch_url($this->getDestination()->atkNodeUri(), 'edit',
             array('atkselector' => $this->getDestination()->primaryKey($record))), $this->text('edit'), SessionManager::SESSION_NESTED, true,
             'class="atkmanytomanyselectrelation-link"');
     }
@@ -410,7 +410,7 @@ class ManyToManySelectRelation extends ManyToManyRelation
      */
     protected function getViewActionLink($record)
     {
-        return Tools::href(Tools::dispatch_url($this->getDestination()->atkNodeUri(), 'view',
+        return $this->getOwnerInstance()->getSessionManager()->href(Tools::dispatch_url($this->getDestination()->atkNodeUri(), 'view',
             array('atkselector' => $this->getDestination()->primaryKey($record))), $this->text('view'), SessionManager::SESSION_NESTED, true,
             'class="atkmanytomanyselectrelation-link"');
     }
@@ -455,7 +455,7 @@ class ManyToManySelectRelation extends ManyToManyRelation
             return '';
         }
 
-        $url = Tools::partial_url($this->getOwnerInstance()->atkNodeUri(), $mode, 'attribute.'.$this->fieldName().'.selectedrecord',
+        $url = $this->getOwnerInstance()->getSessionManager()->partial_url($this->getOwnerInstance()->atkNodeUri(), $mode, 'attribute.'.$this->fieldName().'.selectedrecord',
             array('fieldprefix' => $fieldprefix));
 
         $relation = $this->getManyToOneRelation();

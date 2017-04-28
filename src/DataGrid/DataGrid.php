@@ -2,6 +2,7 @@
 
 namespace Sintattica\Atk\DataGrid;
 
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Core\Tools;
@@ -306,7 +307,7 @@ class DataGrid
      * object instance variable to make sure we have access to it in the
      * destructor.
      *
-     * @var SessionManager
+     * @var SessionManager $m_sessionMgr
      */
     private $m_sessionMgr;
 
@@ -343,21 +344,21 @@ class DataGrid
      * @param string $class class (by default the DataGrid class)
      * @param bool $isEmbedded is embedded?
      * @param bool $useSession use session
+     * @param SessionManager $sessionManager
      *
      * @return DataGrid datagrid instance
      */
-    public static function create(Node $node, $name = null, $class = null, $isEmbedded = false, $useSession = true)
+    public static function create(Node $node, $name = null, $class = null, $isEmbedded = false, $useSession = true, SessionManager $sessionManager)
     {
-        $useSession = $useSession && SessionManager::getInstance() != null;
         $name = $name == null ? uniqid('atkdatagrid') : $name;
         $class = $class == null ? Config::getGlobal('datagrid_class') : $class;
-        $sessions = &$GLOBALS['ATK_VARS']['atkdgsession'];
+        $sessions = &Atk::$ATK_VARS['atkdgsession'];
         $sessions[$name] = array('class' => $class, 'custom' => [], 'system' => array());
         if ($useSession) {
-            SessionManager::getInstance()->pageVar('atkdgsession', $sessions);
+            $sessionManager->pageVar('atkdgsession', $sessions);
         }
         $class = substr($class, strrpos($class, '.') + 1);
-        $grid = new $class($node, $name, self::CREATE, $isEmbedded, $useSession);
+        $grid = new $class($node, $name, self::CREATE, $isEmbedded, $useSession, $sessionManager);
         self::callModifiers($grid, self::CREATE);
 
         return $grid;
@@ -378,21 +379,21 @@ class DataGrid
     public static function resume(Node $node)
     {
         // Cannot resume from session.
-        if (!isset($GLOBALS['ATK_VARS']['atkdatagrid'])) {
+        if (!isset(Atk::$ATK_VARS['atkdatagrid'])) {
             throw new \Exception('No last known datagrid!');
         }
 
-        $name = $GLOBALS['ATK_VARS']['atkdatagrid'];
+        $name = Atk::$ATK_VARS['atkdatagrid'];
 
-        if (!isset($GLOBALS['ATK_VARS']['atkdgsession'][$name])) {
+        if (!isset(Atk::$ATK_VARS['atkdgsession'][$name])) {
             throw new \Exception('No session data for grid: '.$name);
         }
-        $session = $GLOBALS['ATK_VARS']['atkdgsession'][$name];
+        $session = Atk::$ATK_VARS['atkdgsession'][$name];
 
         $class = &$session['class'];
 
         $class = substr($class, strrpos($class, '.') + 1);
-        $grid = new $class($node, $name, self::RESUME);
+        $grid = new $class($node, $name, self::RESUME, false, true, $node->getSessionManager());
         self::callModifiers($grid, self::RESUME);
 
         return $grid;
@@ -406,8 +407,9 @@ class DataGrid
      * @param int $mode creation mode
      * @param bool $isEmbedded is embedded?
      * @param bool $useSession use session?
+     * @param SessionManager $sessionManager
      */
-    public function __construct(Node $node, $name, $mode = self::CREATE, $isEmbedded = false, $useSession = true)
+    public function __construct(Node $node, $name, $mode = self::CREATE, $isEmbedded = false, $useSession = true, SessionManager $sessionManager)
     {
         $this->setName($name);
         $this->setNode($node);
@@ -415,18 +417,18 @@ class DataGrid
         $this->setEmbedded($isEmbedded);
 
         $this->m_useSession = $useSession;
-        $this->m_sessionMgr = $useSession ? SessionManager::getInstance() : null;
+        $this->m_sessionMgr = $sessionManager;
 
         $this->registerGlobalOverrides();
         $this->setUpdate($mode == self::RESUME);
 
         if (!$this->isEmbedded() && empty($node->m_postvars)) {
-            $allVars = $GLOBALS['ATK_VARS'];
+            $allVars = Atk::$ATK_VARS;
         } else {
             $allVars = (array)$node->m_postvars;
         }
 
-        $vars = isset($GLOBALS['ATK_VARS']['atkdg'][$name]) ? $GLOBALS['ATK_VARS']['atkdg'][$name] : null;
+        $vars = isset(Atk::$ATK_VARS['atkdg'][$name]) ? Atk::$ATK_VARS['atkdg'][$name] : null;
 
         $vars = !is_array($vars) ? [] : $vars;
         $this->setPostvars(array_merge($allVars, $vars));
@@ -446,7 +448,7 @@ class DataGrid
     protected function initOnCreate()
     {
         $this->setFlags($this->convertNodeFlags($this->getNode()->getFlags()));
-        $this->setBaseUrl(Tools::partial_url($this->getNode()->atkNodeUri(), $this->getNode()->m_action, 'datagrid'));
+        $this->setBaseUrl($this->m_sessionMgr->partial_url($this->getNode()->atkNodeUri(), $this->getNode()->m_action, 'datagrid'));
 
         $this->setDefaultLimit(Config::getGlobal('recordsperpage'));
         $this->setDefaultActions($this->getNode()->defaultActions('admin'));
@@ -518,13 +520,13 @@ class DataGrid
     {
         $this->m_destroyed = true;
 
-        $sessions = &$GLOBALS['ATK_VARS']['atkdg'];
+        $sessions = &Atk::$ATK_VARS['atkdg'];
         unset($sessions[$this->getName()]);
         if ($this->m_useSession) {
             $this->m_sessionMgr->pageVar('atkdg', $sessions);
         }
 
-        $sessions = &$GLOBALS['ATK_VARS']['atkdgsession'];
+        $sessions = &Atk::$ATK_VARS['atkdgsession'];
         unset($sessions[$this->getName()]);
         if ($this->m_useSession) {
             $this->m_sessionMgr->pageVar('atkdgsession', $sessions);
@@ -561,8 +563,7 @@ class DataGrid
             return;
         }
 
-        $request = array_merge($_GET, $_POST);
-        Tools::atkDataDecode($request);
+        $request = Atk::$ATK_VARS;
 
         $vars = array(
             'atkstartat',
@@ -575,7 +576,7 @@ class DataGrid
             'atkcolcmd',
         );
 
-        $sessions = &$GLOBALS['ATK_VARS']['atkdg'];
+        $sessions = &Atk::$ATK_VARS['atkdg'];
         if ($sessions == null) {
             $sessions = [];
         }
@@ -604,7 +605,7 @@ class DataGrid
      */
     protected function storePostvars()
     {
-        $sessions = &$GLOBALS['ATK_VARS']['atkdg'];
+        $sessions = &Atk::$ATK_VARS['atkdg'];
         $vars = array(
             'atkstartat',
             'atklimit',
@@ -634,7 +635,7 @@ class DataGrid
      */
     protected function loadSession()
     {
-        $this->m_session = &$GLOBALS['ATK_VARS']['atkdgsession'][$this->getName()];
+        $this->m_session = &Atk::$ATK_VARS['atkdgsession'][$this->getName()];
     }
 
     /**
@@ -671,7 +672,7 @@ class DataGrid
             $this->m_session['system'][$var] = $this->$fullVar;
         }
 
-        $sessions = &$GLOBALS['ATK_VARS']['atkdgsession'];
+        $sessions = &Atk::$ATK_VARS['atkdgsession'];
         $sessions[$this->getName()] = $this->m_session;
         if ($this->m_useSession) {
             $this->m_sessionMgr->pageVar('atkdgsession', $sessions);
@@ -1670,8 +1671,7 @@ class DataGrid
      */
     public function getSaveCall()
     {
-        $sm = SessionManager::getInstance();
-        $url = $sm->sessionUrl(Tools::dispatch_url($this->getNode()->atkNodeUri(), 'multiupdate', array('output' => 'json')), SessionManager::SESSION_PARTIAL);
+        $url = $this->m_sessionMgr->sessionUrl(Tools::dispatch_url($this->getNode()->atkNodeUri(), 'multiupdate', array('output' => 'json')), $this->m_sessionMgr::SESSION_PARTIAL);
 
         return 'ATK.DataGrid.save('.Json::encode($this->getName()).', '.Json::encode($url).');';
     }
@@ -1879,5 +1879,10 @@ class DataGrid
     public function getDisplayBottomInfo()
     {
         return $this->m_displayBottomInfo;
+    }
+
+    public function getSessionManager()
+    {
+        return $this->m_sessionMgr;
     }
 }

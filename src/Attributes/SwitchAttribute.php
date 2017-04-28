@@ -2,7 +2,6 @@
 
 namespace Sintattica\Atk\Attributes;
 
-use Sintattica\Atk\Ui\Page;
 use Sintattica\Atk\Core\Config;
 
 class SwitchAttribute extends BoolAttribute
@@ -16,20 +15,25 @@ class SwitchAttribute extends BoolAttribute
 
     public function __construct($name, $flags = 0, $switchOptions = [])
     {
-        $defaultOptions = array(
+        parent::__construct($name, $flags);
+
+        $this->switchOptions = $switchOptions;
+    }
+
+    public function init(){
+        $defaultOptions = [
             'offText' => mb_strtoupper($this->text('no'), 'UTF-8'),
             'onText' => mb_strtoupper($this->text('yes'), 'UTF-8'),
-            'size' => 'small'
-        );
-        $this->switchOptions = array_merge($defaultOptions, $switchOptions);
-        parent::__construct($name, $flags);
+            'size' => 'small',
+        ];
+        $this->switchOptions = array_merge($defaultOptions, $this->switchOptions);
     }
 
     public function registerScriptsAndStyles($fieldprefix)
     {
         $htmlId = $this->getHtmlId($fieldprefix);
 
-        $page = Page::getInstance();
+        $page = $this->getOwnerInstance()->getPage();
         $base = Config::getGlobal('assets_url').'lib/bootstrap-switch/';
 
         $page->register_script($base.'js/bootstrap-switch.min.js');

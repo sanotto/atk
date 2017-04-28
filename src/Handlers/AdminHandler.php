@@ -3,9 +3,9 @@
 namespace Sintattica\Atk\Handlers;
 
 use Sintattica\Atk\Core\Config;
-use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\DataGrid\DataGrid;
 use Sintattica\Atk\Core\Tools;
+use Sintattica\Atk\Errors\AtkErrorException;
 use Sintattica\Atk\Utils\Json;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Session\SessionManager;
@@ -35,7 +35,6 @@ class AdminHandler extends ActionHandler
         }
 
         $page = $this->getPage();
-        $page->register_script(Config::getGlobal('assets_url').'javascript/formsubmit.js');
         $res = $this->renderAdminPage();
         $page->addContent($this->m_node->renderActionPage('admin', $res));
     }
@@ -84,8 +83,7 @@ class AdminHandler extends ActionHandler
     public function addPage($record = null)
     {
         // Reuse the atkAddHandler for the addPage.
-        $atk = Atk::getInstance();
-        $node = $atk->atkGetNode($this->invoke('getAddNodeType'));
+        $node = $this->getNode()->getNodeManager()->getNode($this->invoke('getAddNodeType'));
 
         $handler = $node->getHandler('add');
         $handler->setNode($node);
@@ -128,7 +126,7 @@ class AdminHandler extends ActionHandler
      */
     public function renderAdminList($actions = '')
     {
-        $grid = DataGrid::create($this->getNode(), 'admin');
+        $grid = DataGrid::create($this->getNode(), 'admin', null, false, true, $this->sessionManager);
 
         if (is_array($actions)) {
             $grid->setDefaultActions($actions);
@@ -141,6 +139,7 @@ class AdminHandler extends ActionHandler
         }
 
         $params = [];
+        $params['atkmessages'] = $this->sessionManager->getMessageQueue()->getMessages();
         $params['header'] = $this->invoke('adminHeader').$this->getHeaderLinks();
         $params['list'] = $grid->render();
         $params['footer'] = $this->invoke('adminFooter');
@@ -161,7 +160,7 @@ class AdminHandler extends ActionHandler
 
             $this->modifyDataGrid($grid, DataGrid::RESUME);
         } catch (Exception $e) {
-            $grid = DataGrid::create($this->getNode());
+            $grid = DataGrid::create($this->getNode(), null, null, false, true, $this->sessionManager);
 
             $this->modifyDataGrid($grid, DataGrid::CREATE);
         }
@@ -206,10 +205,10 @@ class AdminHandler extends ActionHandler
 
             // reset search so we can back to the normal admin screen if we want
             $grid->setPostvar('atksearch', array());
-            $sm = SessionManager::getInstance();
+            $sm = $this->sessionManager;
 
             $url = $sm->sessionUrl(Tools::dispatch_url($node->atkNodeUri(), $action, array('atkselector' => $node->primaryKey($records[0]))),
-                SessionManager::SESSION_NESTED);
+                $this->sessionManager::SESSION_NESTED);
 
             if ($grid->isUpdate()) {
                 $script = 'document.location.href = '.Json::encode($url).';';
@@ -262,7 +261,7 @@ class AdminHandler extends ActionHandler
         $link = '';
         if ($this->m_node->allowed('add') && !$this->m_node->hasFlag(Node::NF_READONLY) && $this->m_node->hasFlag(Node::NF_IMPORT)) {
             $cssClass = 'class="btn btn-default admin_link admin_link_import"';
-            $link .= Tools::href(Tools::dispatch_url($this->m_node->atkNodeUri(), 'import'), Tools::atktext('import', 'atk', $this->m_node->m_type),
+            $link .= $this->sessionManager->href(Tools::dispatch_url($this->m_node->atkNodeUri(), 'import'), Tools::atktext('import', 'atk', $this->m_node->m_type),
                 SessionManager::SESSION_NESTED, false, $cssClass);
         }
 
@@ -285,7 +284,7 @@ class AdminHandler extends ActionHandler
 
             $cssClass = 'class="btn btn-default admin_link admin_link_export"';
 
-            $link .= Tools::href(Tools::dispatch_url($this->m_node->atkNodeUri(), 'export', array('atkfilter' => $filter)),
+            $link .= $this->sessionManager->href(Tools::dispatch_url($this->m_node->atkNodeUri(), 'export', array('atkfilter' => $filter)),
                 Tools::atktext('export', 'atk', $this->m_node->m_type), SessionManager::SESSION_NESTED, false, $cssClass);
         }
 
@@ -310,8 +309,7 @@ class AdminHandler extends ActionHandler
      */
     public function getAddLink()
     {
-        $atk = Atk::getInstance();
-        $node = $atk->atkGetNode($this->invoke('getAddNodeType'));
+        $node = $this->getNode()->getNodeManager()->getNode($this->invoke('getAddNodeType'));
 
         if (!$node->hasFlag(Node::NF_NO_ADD) && $node->allowed('add')) {
 
@@ -324,8 +322,9 @@ class AdminHandler extends ActionHandler
             if ($node->hasFlag(Node::NF_ADD_LINK)) {
                 $addurl = $this->invoke('getAddUrl', $node);
 
+
                 $cssClass = 'class="btn btn-default admin_link admin_link_add"';
-                return Tools::href($addurl, $label, SessionManager::SESSION_NESTED, false, $cssClass);
+                return $this->sessionManager->href($addurl, $label, SessionManager::SESSION_NESTED, false, $cssClass);
             }
         }
 
@@ -340,8 +339,7 @@ class AdminHandler extends ActionHandler
      */
     public function getAddUrl()
     {
-        $atk = Atk::getInstance();
-        $node = $atk->atkGetNode($this->invoke('getAddNodeType'));
+        $node = $this->getNode()->getNodeManager()->getNode($this->invoke('getAddNodeType'));
 
         return Config::getGlobal('dispatcher').'?atknodeuri='.$node->atkNodeUri().'&atkaction=add';
     }
@@ -381,6 +379,7 @@ class AdminHandler extends ActionHandler
      * @param string $partial full partial
      *
      * @return string
+     * @throws AtkErrorException
      */
     public function partial_attribute($partial)
     {
@@ -388,9 +387,7 @@ class AdminHandler extends ActionHandler
 
         $attr = $this->m_node->getAttribute($attribute);
         if ($attr == null) {
-            Tools::atkerror("Unknown / invalid attribute '$attribute' for node '".$this->m_node->atkNodeUri()."'");
-
-            return '';
+            throw new AtkErrorException("Unknown / invalid attribute '$attribute' for node '".$this->m_node->atkNodeUri()."'");
         }
 
         return $attr->partial($partial, 'admin');

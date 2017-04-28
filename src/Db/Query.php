@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Db;
 
 use Sintattica\Atk\Core\Tools;
+use Sintattica\Atk\Errors\AtkErrorException;
 
 /**
  * Abstract baseclass for SQL query builder drivers.
@@ -161,10 +162,6 @@ class Query
      */
     public function getDb()
     {
-        if (!isset($this->m_db)) {
-            $this->m_db = Db::getInstance();
-        }
-
         return $this->m_db;
     }
 

@@ -6,7 +6,6 @@ use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Session\SessionManager;
-use Sintattica\Atk\Ui\Page;
 
 /**
  * Many-to-many relation.
@@ -56,14 +55,14 @@ class ManyBoolRelation extends ManyToManyRelation
         $recordset = $this->_getSelectableRecords($record, $mode);
         $total_records = count($recordset);
         if ($total_records > 0) {
-            $page = Page::getInstance();
+            $page = $this->getOwnerInstance()->getPage();
             $page->register_script(Config::getGlobal('assets_url').'javascript/class.atkprofileattribute.js');
 
             if (!$this->hasFlag(self::AF_MANYBOOL_NO_TOOLBAR)) {
                 $result .= '<div align="left">
-                      [<a href="javascript:void(0)" onclick="profile_checkAll(\''.$this->getHtmlId($fieldprefix).'\'); return false;">'.Tools::atktext('check_all',
-                        'atk').'</a> <a href="javascript:void(0)" onclick="profile_checkNone(\''.$this->getHtmlId($fieldprefix).'\'); return false;">'.Tools::atktext('check_none',
-                        'atk').'</a> <a href="javascript:void(0)" onclick="profile_checkInvert(\''.$this->getHtmlId($fieldprefix).'\'); return false;">'.Tools::atktext('invert_selection',
+                      [<a href="javascript:void(0)" onclick="profile_checkAll(\''.$this->getHtmlId($fieldprefix).'\'); return false;">'.$this->getOwnerInstance()->getLanguage()->trans('check_all',
+                        'atk').'</a> <a href="javascript:void(0)" onclick="profile_checkNone(\''.$this->getHtmlId($fieldprefix).'\'); return false;">'.$this->getOwnerInstance()->getLanguage()->trans('check_none',
+                        'atk').'</a> <a href="javascript:void(0)" onclick="profile_checkInvert(\''.$this->getHtmlId($fieldprefix).'\'); return false;">'.$this->getOwnerInstance()->getLanguage()->trans('invert_selection',
                         'atk').'</a>]</div>';
             }
 
@@ -82,8 +81,8 @@ class ManyBoolRelation extends ManyToManyRelation
                         $remotePkAttr = $this->getDestination()->getAttribute($this->getDestination()->primaryKeyField());
                         $remoteValue = $remotePkAttr->value2db($recordset[$i]);
                         $selector = $this->m_linkInstance->m_table.'.'.$this->getLocalKey().'='.$localValue.''.' AND '.$this->m_linkInstance->m_table.'.'.$this->getRemoteKey()."='".$remoteValue."'";
-                        $detailLink = Tools::href(Tools::dispatch_url($this->m_link, 'edit', array('atkselector' => $selector)),
-                            '['.Tools::atktext('edit', 'atk').']', SessionManager::SESSION_NESTED, true);
+                        $detailLink = $this->getOwnerInstance()->getSessionManager()->href(Tools::dispatch_url($this->m_link, 'edit', array('atkselector' => $selector)),
+                            '['.$this->getOwnerInstance()->getLanguage()->trans('edit', 'atk').']', SessionManager::SESSION_NESTED, true);
                     }
                 }
 
@@ -107,11 +106,11 @@ class ManyBoolRelation extends ManyToManyRelation
         } else {
             $nodename = $this->m_destInstance->m_type;
             $modulename = $this->m_destInstance->m_module;
-            $result .= Tools::atktext('select_none', $modulename, $nodename).' ';
+            $result .= $this->getOwnerInstance()->getLanguage()->trans('select_none', $modulename, $nodename).' ';
         }
 
         if (($this->hasFlag(self::AF_MANYBOOL_AUTOLINK)) && ($this->m_destInstance->allowed('add'))) {
-            $result .= Tools::href(Tools::dispatch_url($this->m_destination, 'add'), $this->getAddLabel(), SessionManager::SESSION_NESTED)."\n";
+            $result .= $this->getOwnerInstance()->getSessionManager()->href(Tools::dispatch_url($this->m_destination, 'add'), $this->getAddLabel(), SessionManager::SESSION_NESTED)."\n";
         }
 
         return $result;

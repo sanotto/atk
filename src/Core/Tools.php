@@ -3,41 +3,12 @@
 namespace Sintattica\Atk\Core;
 
 use Sintattica\Atk\Db\Db;
-use Sintattica\Atk\Ui\Output;
-use Sintattica\Atk\Session\SessionManager;
-use Sintattica\Atk\Errors\ErrorHandlerBase;
-use Sintattica\Atk\Utils\Debugger;
 use Sintattica\Atk\Attributes\Attribute;
-use Sintattica\Atk\Ui\Page;
 use Sintattica\Atk\Utils\BrowserInfo;
 use Sintattica\Atk\Handlers\ActionHandler;
-use Exception;
 
 class Tools
 {
-    /**
-     * Converts applicable characters to html entities so they aren't
-     * interpreted by the browser.
-     */
-    const DEBUG_HTML = 1;
-
-    /**
-     * Wraps the self::text into html bold tags in order to make warnings more
-     * clearly visible.
-     */
-    const DEBUG_WARNING = 2;
-
-    /**
-     * Hides the debug unless in level 2.
-     * This should be used for debug you only really want to see if you
-     * are developing (like deprecation warnings).
-     */
-    const DEBUG_NOTICE = 4;
-
-    /**
-     * Error message.
-     */
-    const DEBUG_ERROR = 8;
     /**
      * Accepted charsets for htmlentities and html_entity_decode.
      *
@@ -78,275 +49,6 @@ class Tools
      */
     public static $s_hasMultiByteSupport = null;
 
-    /**
-     * Function self::atkErrorHandler
-     * This function catches PHP parse errors etc, and passes
-     * them to self::atkerror(), so errors can be mailed and output
-     * can be regulated.
-     * This funtion must be registered with set_error_handler("self::atkErrorHandler");.
-     *
-     * @param $errtype : One of the PHP errortypes (E_PARSE, E_USER_ERROR, etc)
-     * (See http://www.php.net/manual/en/function.error-reporting.php)
-     * @param $errstr : Error self::text
-     * @param $errfile : The php file in which the error occured.
-     * @param $errline : The line in the file on which the error occured.
-     */
-    public static function atkErrorHandler($errtype, $errstr, $errfile, $errline)
-    {
-        // probably suppressed error using the @ operator, simply ignore
-        if (error_reporting() == 0) {
-            return;
-        }
-
-        $errortype = array(
-            E_ERROR => "Error",
-            E_WARNING => "Warning",
-            E_PARSE => "Parsing Error",
-            E_NOTICE => "Notice",
-            E_CORE_ERROR => "Core Error",
-            E_CORE_WARNING => "Core Warning",
-            E_COMPILE_ERROR => "Compile Error",
-            E_COMPILE_WARNING => "Compile Warning",
-            E_USER_ERROR => "User Error",
-            E_USER_WARNING => "User Warning",
-            E_USER_NOTICE => "User Notice",
-            E_STRICT => "Strict Notice",
-            'EXCEPTION' => 'Uncaught exception',
-        );
-
-        // E_RECOVERABLE_ERROR is available since 5.2.0
-        if (defined('E_RECOVERABLE_ERROR')) {
-            $errortype[E_RECOVERABLE_ERROR] = "Recoverable Error";
-        }
-
-        // E_DEPRECATED / E_USER_DEPRECATED are available since 5.3.0
-        if (defined('E_DEPRECATED')) {
-            $errortype[E_DEPRECATED] = "Deprecated";
-            $errortype[E_USER_DEPRECATED] = "User Deprecated";
-        }
-
-        // Translate the given errortype into a string
-        $errortypestring = $errortype[$errtype];
-
-        if ($errtype == E_STRICT) {
-            // ignore strict notices for now, there is too much stuff that needs to be fixed
-            return;
-        } else {
-            if ($errtype == E_NOTICE) {
-                // Just show notices
-                self::atkdebug("[$errortypestring] $errstr in $errfile (line $errline)", self::DEBUG_NOTICE);
-
-                return;
-            } else {
-                if (defined('E_DEPRECATED') && ($errtype & (E_DEPRECATED | E_USER_DEPRECATED)) > 0) {
-                    // Just show deprecation warnings in the debug log, but don't influence the program flow
-                    self::atkdebug("[$errortypestring] $errstr in $errfile (line $errline)", self::DEBUG_NOTICE);
-
-                    return;
-                } else {
-                    if (($errtype & (E_WARNING | E_USER_WARNING)) > 0) {
-                        // This is something we should pay attention to, but we don't need to die.
-                        self::atkerror("[$errortypestring] $errstr in $errfile (line $errline)");
-
-                        return;
-                    } else {
-
-                        self::atkerror("[$errortypestring] $errstr in $errfile (line $errline)", ($errtype == 'EXCEPTION'));
-                        // we must die. we can't even output anything anymore..
-                        // we can do something with the info though.
-                        self::atkhalt($errstr, 'critical');
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Default ATK exception handler, handles uncaught exceptions and calls atkHalt.
-     *
-     * @param Exception $exception uncaught exception
-     */
-    public static function atkExceptionHandler($exception)
-    {
-        self::atkErrorHandler('EXCEPTION', $exception->getMessage(), $exception->getFile(), $exception->getLine());
-    }
-
-    /**
-     * Default ATK fatal handler
-     */
-    public static function atkFatalHandler()
-    {
-
-        $error = error_get_last();
-        if ($error) {
-            self::atkErrorHandler(E_ERROR, $error['message'], $error['file'], $error['line']);
-        }
-    }
-
-    /**
-     * Function self::atkhalt
-     * Halts on critical errors and also on warnings if specified in the config file.
-     *
-     * @param string $msg The message to be displayed
-     * @param string $level The level of the error,
-     *                      ("critical"|"warning" (default))
-     *
-     * @return bool false if something goes horribly wrong
-     */
-    public static function atkhalt($msg, $level = 'warning')
-    {
-        if ($level == Config::getGlobal('halt_on_error') || $level == 'critical') {
-            if ($level == 'warning') {
-                $level_color = '#0000ff';
-            } else {
-                // critical
-                $level_color = '#ff0000';
-            }
-
-            if (php_sapi_name() == 'cli') {
-                $res = self::atktext($level, 'atk').': '.$msg."\n";
-            } else {
-                $res = '<html>';
-                $res .= '<body style="background-color: #ffffff; color:#000000;">';
-                $res .= "<span style=\"color:$level_color;\"><b>".self::atktext($level, 'atk')."</b></span>: $msg.<br />\n";
-            }
-
-            Output::getInstance()->output($res);
-            Output::getInstance()->outputFlush();
-            exit("Halted...\n");
-        } else {
-            self::atkerror("$msg");
-        }
-
-        return false;
-    }
-
-    /**
-     * Function atkdebug.
-     *
-     * Adds debug self::text to the debug log
-     *
-     * @param string $txt The self::text that will be added to the log
-     * @param int $flags An optional combination of Tools::DEBUG_ flags
-     */
-    public static function atkdebug($txt, $flags = 0)
-    {
-        global $g_debug_msg;
-        $level = Config::getGlobal('debug');
-        if ($level >= 0) {
-            if (self::hasFlag($flags, self::DEBUG_HTML)) {
-                $txt = htmlentities($txt);
-            }
-            if (self::hasFlag($flags, self::DEBUG_WARNING)) {
-                $txt = '<b>'.$txt.'</b>';
-            }
-
-            $line = self::atkGetTimingInfo().$txt;
-            self::atkWriteLog($line);
-
-            if (self::hasFlag($flags, self::DEBUG_ERROR)) {
-                $line = '<span class="atkDebugError">'.$line.'</span>';
-            }
-
-            if ($level > 2) {
-                if (!Debugger::addStatement($line)) {
-                    $g_debug_msg[] = $line;
-                }
-            } else {
-                if (!self::hasFlag($flags, self::DEBUG_NOTICE)) {
-                    $g_debug_msg[] = $line;
-                }
-            }
-        } else {
-            if ($level > -1) { // at 0 we still collect the info so we
-                // have it in error reports. At -1, we don't collect
-                $g_debug_msg[] = $txt;
-            }
-        }
-    }
-
-    /**
-     * Send a notice to the debug log.
-     * A notice doesn't get show unless your debug level is 3 or higher.
-     *
-     * @param string $txt The self::text that will be added to the log
-     */
-    public static function atknotice($txt)
-    {
-        self::atkdebug($txt, self::DEBUG_NOTICE);
-    }
-
-    /**
-     * Send a warning to the debug log.
-     * A warning gets shown more prominently than a normal debug line.
-     * However it does not trigger a mailreport
-     * or anything else that an self::atkerror triggers.
-     *
-     * @param string $txt
-     */
-    public static function atkwarning($txt)
-    {
-        self::atkdebug($txt, self::DEBUG_WARNING);
-    }
-
-    public static function atkGetTimingInfo()
-    {
-        return '['.Debugger::elapsed().(Config::getGlobal('debug') > 0 && function_exists('memory_get_usage') ? ' / '.sprintf('%02.02f',
-                (memory_get_usage() / 1024 / 1024)).'MB' : '').'] ';
-    }
-
-    /**
-     * Like self::atkdebug, this displays a message at the bottom of the screen.
-     * The difference is, that this is also displayed when debugging is turned
-     * off.
-     *
-     * If error reporting by email is turned on, the error messages are also
-     * send by e-mail.
-     *
-     * @param string|Exception $error the error self::text or exception to display
-     * @param bool $skipThrow
-     *
-     * @throws \Exception if throw_exception_on_error
-     */
-    public static function atkerror($error, $skipThrow = false)
-    {
-        global $g_error_msg, $g_debug_msg;
-
-        if ($error instanceof \Exception) {
-            $g_error_msg[] = '['.Debugger::elapsed().'] '.$error->getMessage();
-            self::atkdebug(nl2br($error->getMessage()."\n".$error->getTraceAsString()), self::DEBUG_ERROR);
-        } else {
-            $g_error_msg[] = '['.Debugger::elapsed().'] '.$error;
-            self::atkdebug($error, self::DEBUG_ERROR);
-        }
-
-        if (function_exists('debug_backtrace')) {
-            self::atkdebug('Trace:'.self::atkGetTrace(), self::DEBUG_ERROR);
-        }
-
-        $default_error_handlers = [];
-        $mailReport = Config::getGlobal('mailreport');
-        if ($mailReport) {
-            $default_error_handlers['Mail'] = array('mailto' => $mailReport);
-        }
-
-        $errorHandlers = Config::getGlobal('error_handlers', $default_error_handlers);
-        foreach ($errorHandlers as $key => $value) {
-            if (is_numeric($key)) {
-                $key = $value;
-            }
-            $errorHandlerObject = ErrorHandlerBase::get($key, $value);
-            $errorHandlerObject->handle($g_error_msg, $g_debug_msg);
-        }
-
-        if (!$skipThrow && Config::getGlobal('throw_exception_on_error')) {
-            if ($error instanceof Exception) {
-                throw $error;
-            } else {
-                throw new Exception($error);
-            }
-        }
-    }
 
     /**
      * Returns a trace-route from all functions where-through the code has been executed.
@@ -373,11 +75,6 @@ class Tools
             //for($i=count($traceArr)-1; $i >= 0; $i--)
             // Skip this item in the backtrace if empty
             if (empty($traceArr[$i])) {
-                continue;
-            }
-
-            // Don't display an self::atkerror statement itself.
-            if ($traceArr[$i]['function'] == 'self::atkerror') {
                 continue;
             }
 
@@ -471,21 +168,6 @@ class Tools
         if ($fp) {
             fwrite($fp, $text."\n");
             fclose($fp);
-        }
-    }
-
-    /**
-     * Writes info to the optional debug logfile.
-     * Please notice this feature will heavily decrease the performance
-     * and should therefore only be used for debugging and development
-     * purposes.
-     *
-     * @param string $text self::text to write to the logfile
-     */
-    public static function atkWriteLog($text)
-    {
-        if (Config::getGlobal('debug') > 0 && Config::getGlobal('debuglog')) {
-            self::atkWriteToFile($text, Config::getGlobal('debuglog'));
         }
     }
 
@@ -858,27 +540,6 @@ class Tools
     }
 
     /**
-     * Returns a url to open a popup window.
-     *
-     * @param string $target the target of the popup
-     * @param string $params extra params to pass along
-     * @param string $winName the name of the window
-     * @param int $width the width of the popup
-     * @param int $height the height of the popup
-     * @param string $scroll allow scrolling? (no (default)|yes)
-     * @param string $resize allow resizing? (no (default)|yes)
-     *                        return string the url for the popup window
-     */
-    public static function atkPopup($target, $params, $winName, $width, $height, $scroll = 'no', $resize = 'no')
-    {
-        $sm = SessionManager::getInstance();
-        $url = $sm->sessionUrl('include.php?file='.$target.'&'.$params, SessionManager::SESSION_NESTED);
-        $popupurl = "javascript:NewWindow('".$url."','".$winName."',".$height.','.$width.",'".$scroll."','".$resize."')";
-
-        return $popupurl;
-    }
-
-    /**
      * Adds new element to error array en $record. When
      * $msg is empty the multilange error string is used.
      *
@@ -1051,7 +712,7 @@ class Tools
         if ($mimetype != '') {
             $mime = $mimetype;
         } else {
-            if ($mimetype == '' && $detectmime && function_exists('mime_content_type')) {
+            if ($mimetype == '' && $detectmime) {
                 $mime = mime_content_type($file);
             }
         }
@@ -1140,11 +801,9 @@ class Tools
      */
     public static function makeUrlFromPostvars($target)
     {
-        global $ATK_VARS;
-
-        if (count($ATK_VARS)) {
+        if (count(Atk::$ATK_VARS)) {
             $url = $target.'?';
-            foreach ($ATK_VARS as $key => $val) {
+            foreach (Atk::$ATK_VARS as $key => $val) {
                 $url .= $key.'='.rawurlencode($val).'&';
             }
 
@@ -1161,11 +820,10 @@ class Tools
      */
     public static function makeHiddenPostvars($excludes = array())
     {
-        global $ATK_VARS;
         $str = '';
 
-        if (count($ATK_VARS)) {
-            foreach ($ATK_VARS as $key => $val) {
+        if (count(Atk::$ATK_VARS)) {
+            foreach (Atk::$ATK_VARS as $key => $val) {
                 if (!in_array($key, $excludes)) {
                     $inputs = [];
                     self::atkMakeHiddenPostVarsRecursion($key, $val, $inputs);
@@ -1277,77 +935,6 @@ class Tools
         }
 
         return $phpfile;
-    }
-
-    /**
-     * Generate a partial url.
-     *
-     * @param string $node the (module.)node name
-     * @param string $action the atkaction
-     * @param string $partial the partial name
-     * @param array $params a key/value array with extra params
-     * @param int $sessionStatus session status (default SessionManager::SESSION_PARTIAL)
-     *
-     * @return string url for the partial action
-     */
-    public static function partial_url(
-        $node,
-        $action,
-        $partial,
-        $params = [],
-        $sessionStatus = SessionManager::SESSION_PARTIAL
-    ) {
-        if (!is_array($params)) {
-            $params = [];
-        }
-        $params['atkpartial'] = $partial;
-        $sm = SessionManager::getInstance();
-
-        return $sm->sessionUrl(self::dispatch_url($node, $action, $params), $sessionStatus);
-    }
-
-    /**
-     * Creates a session aware button.
-     *
-     * @param string $text the self::text to display on the button
-     * @param string $url the url to use for the button
-     * @param int $sessionstatus the session flags
-     *                              (SessionManager::SESSION_DEFAULT (default)|SessionManager::SESSION_NEW|SessionManager::SESSION_REPLACE|
-     *                              SessionManager::SESSION_NESTED|SessionManager::SESSION_BACK)
-     * @param string $cssclass the css class the button should get
-     * @param bool $embeded wether or not it's an embedded button
-     *
-     * @return string html button
-     */
-    public static function atkButton(
-        $text,
-        $url = '',
-        $sessionstatus = SessionManager::SESSION_DEFAULT,
-        $embedded = true,
-        $cssclass = ''
-    ) {
-        $sm = SessionManager::getInstance();
-        $page = Page::getInstance();
-        $page->register_script(Config::getGlobal('assets_url').'javascript/formsubmit.js');
-        static $cnt = 0;
-
-        if ($cssclass == '') {
-            $cssclass = 'btn btn-default';
-        }
-
-        $cssclass = ' class="'.$cssclass.'"';
-        $script = 'atkSubmit("'.self::atkurlencode($sm->sessionUrl($url, $sessionstatus)).'")';
-        $button = '<input type="button" name="atkbtn'.(++$cnt).'" value="'.$text.'" onClick=\''.$script.'\''.$cssclass.'>';
-
-        if (!$embedded) {
-            $res = '<form name="entryform">';
-            $res .= $sm->formState();
-            $res .= $button.'</form>';
-
-            return $res;
-        } else {
-            return $button;
-        }
     }
 
     /**
@@ -1479,24 +1066,6 @@ class Tools
         }
 
         return $escaped;
-    }
-
-    /*
-     * Returns the postvars
-     * Returns a value or an array with all values
-     */
-
-    public static function atkGetPostVar($key = '')
-    {
-        if (empty($key) || $key == '') {
-            return $_REQUEST;
-        } else {
-            if (array_key_exists($key, $_REQUEST) && $_REQUEST[$key] != '') {
-                return $_REQUEST[$key];
-            }
-
-            return '';
-        }
     }
 
     /**
@@ -1733,7 +1302,7 @@ class Tools
         }
 
         /* get date string */
-        $str_date = adodb_date($format, $date[0]);
+        $str_date = date($format, $date[0]);
 
         $month = $date['month'];
         $shortmonth = substr(strtolower($date['month']), 0, 3);
@@ -1810,71 +1379,6 @@ class Tools
             return false;
         } else {
             return false;
-        }
-    }
-
-    /**
-     * Makes a session-aware href url.
-     * When using hrefs in the editform, you can set saveform to true. This will save your
-     * form variables in the session and restore them whenever you come back.
-     *
-     * @param string $url the url to make session aware
-     * @param string $name the name to display (will not be escaped!)
-     * @param int $sessionstatus the session flags
-     *                              (SessionManager::SESSION_DEFAULT (default)|SessionManager::SESSION_NEW|SessionManager::SESSION_REPLACE|
-     *                              SessionManager::SESSION_NESTED|SessionManager::SESSION_BACK)
-     * @param bool $saveform wether or not to save the form
-     * @param string $extraprops extra props you can add in the link such as
-     *                              'onChange="doSomething()"'
-     * @static
-     *
-     * @return string the HTML link for the session aware URI
-     */
-    public static function href(
-        $url,
-        $name = '',
-        $sessionstatus = SessionManager::SESSION_DEFAULT,
-        $saveform = false,
-        $extraprops = ''
-    ) {
-        $sm = SessionManager::getInstance();
-        if ($saveform) {
-            $str = 'atkSubmit("'.self::atkurlencode($sm->sessionUrl($url, $sessionstatus)).'", true);';
-
-            return '<a href="javascript:void(0)" onclick="'.htmlentities($str).'" '.$extraprops.'>'.$name.'</a>';
-        } else {
-            $str = $sm->sessionUrl($url, $sessionstatus);
-
-            return '<a href="'.htmlentities($str).'" '.$extraprops.'>'.$name.'</a>';
-        }
-    }
-
-    public static function redirect($location, $exit = true)
-    {
-        // The actual redirect.
-        if (Config::getGlobal('debug') >= 2) {
-            $debugger = Debugger::getInstance();
-            $debugger->setRedirectUrl($location);
-            self::atkdebug('Non-debug version would have redirected to <a href="'.$location.'">'.$location.'</a>');
-            if ($exit) {
-                $output = Output::getInstance();
-                $output->outputFlush();
-                exit();
-            }
-        } else {
-            self::atkdebug('redirecting to: '.$location);
-
-            if (substr($location, -1) == '&') {
-                $location = substr($location, 0, -1);
-            }
-            if (substr($location, -1) == '?') {
-                $location = substr($location, 0, -1);
-            }
-
-            header('Location: '.$location);
-            if ($exit) {
-                exit();
-            }
         }
     }
 
@@ -2098,12 +1602,10 @@ class Tools
     public static function iconv($in_charset, $out_charset, $str)
     {
         if (function_exists('iconv')) {
-            $str = iconv($in_charset, $out_charset, $str);
-        } else {
-            self::atkwarning(self::atktext('error_iconv_not_install'));
+            return iconv($in_charset, $out_charset, $str);
         }
 
-        return $str;
+        die('error_iconv_not_install');
     }
 
     /**

@@ -4,7 +4,6 @@ namespace Sintattica\Atk\Relations;
 
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\DataGrid\DataGrid;
-use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Db\Query;
 use Sintattica\Atk\Db\Db;
 use Sintattica\Atk\Core\Node;
@@ -255,11 +254,10 @@ class OneToOneRelation extends Relation
      */
     public function delete($record)
     {
-        $atk = Atk::getInstance();
         $classname = $this->m_destination;
         $cache_id = $this->m_owner.'.'.$this->m_name;
-        $rel = $atk->atkGetNode($classname, true, $cache_id);
-        Tools::atkdebug("O2O DELETE for $classname: ".$this->m_refKey.'='.$record[$this->m_ownerInstance->primaryKeyField()]);
+        $rel = $this->getOwnerInstance()->getNodeManager()->getNode($classname, true, $cache_id);
+        $this->getOwnerInstance()->getDebugger()->addDebug("O2O DELETE for $classname: ".$this->m_refKey.'='.$record[$this->m_ownerInstance->primaryKeyField()]);
 
         if ($this->m_refKey != '') {
             // Foreign key is in the destination node
@@ -441,7 +439,7 @@ class OneToOneRelation extends Relation
         if ($this->createDestination()) {
             $vars = $this->_getStoreValue($record);
             if ($vars['mode'] == 'edit') {
-                Tools::atkdebug('Updating existing one2one record');
+                $this->getOwnerInstance()->getDebugger()->addDebug('Updating existing one2one record');
                 // we put the vars in the postvars, because there is information
                 // like atkorgkey in it that is vital.
                 // but we restore the postvars after we're done updating
@@ -456,7 +454,7 @@ class OneToOneRelation extends Relation
                     // destination record already exists, and we are not copying.
                     $result = true;
                 } else {
-                    Tools::atkdebug("atkonetoonerelation->store(): Adding new one2one record for mode $mode");
+                    $this->getOwnerInstance()->getDebugger()->addDebug("atkonetoonerelation->store(): Adding new one2one record for mode $mode");
                     $this->m_destInstance->preAdd($vars);
                     $result = $this->m_destInstance->addDb($vars, true, $mode);
                 }
@@ -467,7 +465,7 @@ class OneToOneRelation extends Relation
 
                 return $result;
             } else {
-                Tools::atkdebug('atkonetoonerelation->store(): Nothing to store in one2one record');
+                $this->getOwnerInstance()->getDebugger()->addDebug('atkonetoonerelation->store(): Nothing to store in one2one record');
 
                 return true;
             }
@@ -567,7 +565,7 @@ class OneToOneRelation extends Relation
      */
     public function hide($record, $fieldprefix, $mode)
     {
-        Tools::atkdebug('hide called for '.$this->fieldName());
+        $this->getOwnerInstance()->getDebugger()->addDebug('hide called for '.$this->fieldName());
         if ($this->createDestination()) {
             $myrecord = null;
             if ($record[$this->fieldName()] != null) {
@@ -693,7 +691,7 @@ class OneToOneRelation extends Relation
                         );
                     }
                     $arr['fields'][] = array(
-                        'line' => '<b>'.Tools::atktext($this->m_name, $this->m_ownerInstance->m_module, $this->m_ownerInstance->m_type).'</b>',
+                        'line' => '<b>'.$this->getOwnerInstance()->getLanguage()->trans($this->m_name, $this->m_ownerInstance->m_module, $this->m_ownerInstance->m_type).'</b>',
                         'tabs' => $this->m_tabs,
                         'sections' => $this->getSections(),
                     );
@@ -776,7 +774,7 @@ class OneToOneRelation extends Relation
                     );
                 }
                 $arr['fields'][] = array(
-                    'line' => '<b>'.Tools::atktext($this->m_name, $this->m_ownerInstance->m_module, $this->m_ownerInstance->m_type).'</b>',
+                    'line' => '<b>'.$this->getOwnerInstance()->getLanguage()->trans($this->m_name, $this->m_ownerInstance->m_module, $this->m_ownerInstance->m_type).'</b>',
                     'tabs' => $this->m_tabs,
                     'sections' => $this->getSections(),
                 );
@@ -1053,7 +1051,7 @@ class OneToOneRelation extends Relation
                     if (is_object($p_attrib)) {
                         $p_attrib->searchCondition($query, $p_attrib->getOwnerInstance()->getTable(), $val, $this->getChildSearchMode($searchmode, $p_attrib->fieldName()));
                     } else {
-                        Tools::atkdebug("Field $key was not found in this relation (this is very weird)");
+                        $this->getOwnerInstance()->getDebugger()->addDebug("Field $key was not found in this relation (this is very weird)");
                     }
                 }
             }

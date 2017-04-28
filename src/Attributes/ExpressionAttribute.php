@@ -131,11 +131,14 @@ class ExpressionAttribute extends Attribute
     {
         if ($this->getSearchType() == 'number') {
             $attr = new NumberAttribute($this->fieldName());
-
+            $attr->setOwnerInstance($this->getOwnerInstance());
+            $attr->init();
             return $attr->search($record, $extended, $fieldprefix);
         } else {
             if ($this->getSearchType() == 'date') {
                 $attr = new DateAttribute($this->fieldName());
+                $attr->setOwnerInstance($this->getOwnerInstance());
+                $attr->init();
                 $attr->m_searchsize = 10;
 
                 return $attr->search($record, $extended, $fieldprefix);
@@ -149,9 +152,14 @@ class ExpressionAttribute extends Attribute
     {
         if ($this->getSearchType() == "number") {
             $attr = new NumberAttribute($this->fieldName());
+            $attr->setOwnerInstance($this->getOwnerInstance());
+            $attr->init();
+
             return $attr->display($record, $mode);
         } else if ($this->getSearchType() == "date") {
             $attr = new DateAttribute($this->fieldName());
+            $attr->setOwnerInstance($this->getOwnerInstance());
+            $attr->init();
             $record[$this->fieldName()] = $attr->db2value($record);
             return $attr->display($record, $mode);
         }
@@ -176,6 +184,8 @@ class ExpressionAttribute extends Attribute
 
         if ($this->getSearchType() == 'number') {
             $attr = new NumberAttribute($this->fieldName());
+            $attr->setOwnerInstance($this->getOwnerInstance());
+            $attr->init();
             $value = $attr->processSearchValue($value, $searchmode);
 
             if ($searchmode == 'between') {

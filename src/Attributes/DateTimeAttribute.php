@@ -63,9 +63,9 @@ class DateTimeAttribute extends Attribute
         }
 
         if ($dateValid) {
-            return adodb_mktime($hour, $min, $sec, $month, $day, $year);
+            return mktime($hour, $min, $sec, $month, $day, $year);
         } else {
-            return adodb_mktime(0, 0, 0);
+            return mktime(0, 0, 0);
         }
     }
 
@@ -581,7 +581,7 @@ class DateTimeAttribute extends Attribute
                     }
                 }
 
-                Tools::atkdebug('WARNING: could not determine UTC offset for atkDateTimeAttribute "'.$this->fieldName().'"!');
+                $this->getOwnerInstance()->getDebugger()->addDebug('WARNING: could not determine UTC offset for atkDateTimeAttribute "'.$this->fieldName().'"!');
 
                 return 0;
             } else {

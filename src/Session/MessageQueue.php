@@ -1,8 +1,7 @@
 <?php
 
-namespace Sintattica\Atk\Utils;
+namespace Sintattica\Atk\Session;
 
-use Sintattica\Atk\Session\SessionManager;
 
 /**
  * This class implements the ATK message queue for showing messages
@@ -20,29 +19,13 @@ class MessageQueue
     const AMQ_WARNING = 2;
     const AMQ_FAILURE = 3;
 
-    /**
-     * Retrieve the atkMessageQueue instance.
-     *
-     * @return MessageQueue The instance.
-     */
-    public static function getInstance()
-    {
-        static $s_instance = null;
-        if ($s_instance == null) {
-            $sessionManager = SessionManager::getInstance();
-            if (is_object($sessionManager)) { // don't bother to create if session has not yet been initialised
-                $s_instance = new self();
-            }
-        }
+    /** @var  SessionManager $sessionManager */
+    protected $sessionManager;
 
-        return $s_instance;
-    }
 
-    /**
-     * Constructor.
-     */
-    public function __construct()
+    public function __construct(SessionManager $sessionManager)
     {
+        $this->sessionManager = $sessionManager;
     }
 
     /**
@@ -57,12 +40,7 @@ class MessageQueue
      */
     public function addMessage($txt, $type = self::AMQ_GENERAL)
     {
-        $instance = self::getInstance();
-        if (is_object($instance)) {
-            return $instance->_addMessage($txt, $type);
-        }
-
-        return false;
+        return $this->_addMessage($txt, $type);
     }
 
     /**
@@ -112,14 +90,9 @@ class MessageQueue
      *
      * @return string message
      */
-    public static function getMessage()
+    public function getMessage()
     {
-        $instance = self::getInstance();
-        if (is_object($instance)) {
-            return $instance->_getMessage();
-        }
-
-        return '';
+        return $this->_getMessage();
     }
 
     /**
@@ -139,14 +112,9 @@ class MessageQueue
      *
      * @return array messages
      */
-    public static function getMessages()
+    public function getMessages()
     {
-        $instance = self::getInstance();
-        if (is_object($instance)) {
-            return $instance->_getMessages();
-        }
-
-        return [];
+        return $this->_getMessages();
     }
 
     /**
@@ -170,8 +138,7 @@ class MessageQueue
      */
     public function &getQueue()
     {
-        $sessionmgr = SessionManager::getInstance();
-        $session = &$sessionmgr->getSession();
+        $session = &$this->sessionManager->getSession();
         if (!isset($session['atkmessagequeue'])) {
             $session['atkmessagequeue'] = [];
         }

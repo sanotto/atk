@@ -52,7 +52,7 @@ class DataGridList extends DataGridComponent
     {
         $grid = $this->getGrid();
         $page = $this->getPage();
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         $edit = $grid->isEditing();
 
@@ -175,8 +175,8 @@ class DataGridList extends DataGridComponent
             $buttonType = $grid->isEmbedded() ? 'button' : 'submit';
             $button = '<input type="'.$buttonType.'" class="btn btn-default btn_search" value="'.Tools::atktext('search').'" onclick="'.$call.' return false;">';
             if ($grid->hasFlag(DataGrid::EXTENDED_SEARCH)) {
-                $button .= ' '.Tools::href(Config::getGlobal('dispatcher').'?atknodeuri='.$grid->getActionNode()->atkNodeUri().'&atkaction='.$grid->getActionNode()->getExtendedSearchAction(),
-                        '('.Tools::atktext('search_extended').')', SessionManager::SESSION_NESTED);
+                $button .= ' '.$this->sessionManager->href(Config::getGlobal('dispatcher').'?atknodeuri='.$grid->getActionNode()->atkNodeUri().'&atkaction='.$grid->getActionNode()->getExtendedSearchAction(),
+                        '('.Tools::atktext('search_extended').')', $this->sessionManager::SESSION_NESTED);
             }
 
             $button = '<div class="search-buttons">'.$button.'</div>';
@@ -408,7 +408,7 @@ class DataGridList extends DataGridComponent
         /*         * ********************************************** */
         $mra = '';
         if (!$edit && $grid->hasFlag(DataGrid::MULTI_RECORD_PRIORITY_ACTIONS)) {
-            $target = $sm->sessionUrl(Config::getGlobal('dispatcher').'?atknodeuri='.$grid->getActionNode()->atkNodeUri(), SessionManager::SESSION_NESTED);
+            $target = $sm->sessionUrl(Config::getGlobal('dispatcher').'?atknodeuri='.$grid->getActionNode()->atkNodeUri(), $this->sessionManager::SESSION_NESTED);
 
             /* multiple actions -> dropdown */
             if (count($grid->getNode()->m_priority_actions) > 1) {
@@ -429,7 +429,7 @@ class DataGridList extends DataGridComponent
             $postvars = $grid->getNode()->m_postvars;
 
             $target = $sm->sessionUrl(Config::getGlobal('dispatcher').'?atknodeuri='.$grid->getNode()->atkNodeUri().'&atktarget='.(!empty($postvars['atktarget']) ? $postvars['atktarget'] : '').'&atktargetvar='.(!empty($postvars['atktargetvar']) ? $postvars['atktargetvar'] : '').'&atktargetvartpl='.(!empty($postvars['atktargetvartpl']) ? $postvars['atktargetvartpl'] : ''),
-                SessionManager::SESSION_NESTED);
+                $this->sessionManager::SESSION_NESTED);
 
             $mra_all = '<div class="btn btn-default" onclick="updateSelection(\''.$listName.'\', $(this).up(\'form\'), \'all\')">'.Tools::atktext('select_all').'</div>';
             $mra_none = '<div class="btn btn-default" onclick="updateSelection(\''.$listName.'\', $(this).up(\'form\'), \'none\')">'.Tools::atktext('deselect_all').'</div>';

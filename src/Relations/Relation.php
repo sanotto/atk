@@ -5,7 +5,6 @@ namespace Sintattica\Atk\Relations;
 use Sintattica\Atk\Attributes\Attribute;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Core\Tools;
-use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Utils\StringParser;
 use Sintattica\Atk\Db\Query;
 
@@ -200,20 +199,17 @@ class Relation extends Attribute
      * If succesful, the instance is stored in the m_destInstance member variable.
      *
      * @return bool true if succesful, false if something went wrong.
+     * @throws AtkErrorException
      */
     public function createDestination()
     {
         if (!is_object($this->m_destInstance)) {
-            $atk = Atk::getInstance();
             $cache_id = $this->m_owner.'.'.$this->m_name;
-            $this->m_destInstance = $atk->atkGetNode($this->m_destination, true, $cache_id);
+            $this->m_destInstance = $this->getOwnerInstance()->getNodeManager()->getNode($this->m_destination, true, $cache_id);
 
             // Validate if destination was created succesfully
             if (!is_object($this->m_destInstance)) {
-                Tools::atkerror("Relation with unknown nodetype '".$this->m_destination."' (in node '".$this->m_owner."')");
-                $this->m_destInstance = null;
-
-                return false;
+                throw new AtkErrorException("Relation with unknown nodetype '".$this->m_destination."' (in node '".$this->m_owner."')");
             }
 
             if ($this->hasFlag(self::AF_NO_FILTER)) {
@@ -370,14 +366,14 @@ class Relation extends Attribute
     public function getAddLabel()
     {
         $key = 'link_'.$this->fieldName().'_add';
-        $label = Tools::atktext($key, $this->m_ownerInstance->m_module, $this->m_ownerInstance->m_type, '', '', true);
+        $label = $this->getOwnerInstance()->getLanguage()->trans($key, $this->m_ownerInstance->m_module, $this->m_ownerInstance->m_type, '', '', true);
         if ($label == '') {
-            $label = Tools::atktext($key, $this->m_destInstance->m_module, '', '', '', true);
+            $label = $this->getOwnerInstance()->getLanguage()->trans($key, $this->m_destInstance->m_module, '', '', '', true);
             if ($label == '') {
                 $key = 'link_'.Tools::getNodeType($this->m_destination).'_add';
-                $label = Tools::atktext($key, $this->m_destInstance->m_module, '', '', '', true);
+                $label = $this->getOwnerInstance()->getLanguage()->trans($key, $this->m_destInstance->m_module, '', '', '', true);
                 if ($label == '') {
-                    $label = Tools::atktext('link_add', 'atk');
+                    $label = $this->getOwnerInstance()->getLanguage()->trans('link_add', 'atk');
                 }
             }
         }

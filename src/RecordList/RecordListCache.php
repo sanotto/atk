@@ -5,6 +5,7 @@ namespace Sintattica\Atk\RecordList;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Core\Tools;
+use Sintattica\Atk\Errors\AtkErrorException;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Ui\Page;
 use Sintattica\Atk\Utils\DirectoryTraverser;
@@ -141,6 +142,7 @@ class RecordListCache
      *
      * @param string $output The HTML output of the recordlist
      * @param string $actionloader The actionloader js part of the recordlist
+     * @throws AtkErrorException
      */
     public function writeCache($output, $actionloader)
     {
@@ -159,9 +161,7 @@ class RecordListCache
                 fwrite($fp, $output);
                 fclose($fp);
             } else {
-                Tools::atkerror("Couldn't open {$this->m_cacheid} for writing!");
-
-                return;
+                throw new AtkErrorException("Couldn't open {$this->m_cacheid} for writing!");
             }
 
             $fp = &fopen($this->m_cacheid.'_actionloader', 'a+');
@@ -169,7 +169,7 @@ class RecordListCache
                 fwrite($fp, $actionloader);
                 fclose($fp);
             } else {
-                return Tools::atkerror("Couldn't open {$this->m_cacheid}_actionloader for writing!");
+                throw new AtkErrorException("Couldn't open {$this->m_cacheid}_actionloader for writing!");
             }
             Tools::atkdebug("New cache created for {$this->m_node->m_module}.{$this->m_node->m_type} and written to: $this->m_cacheid");
         }

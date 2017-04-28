@@ -4,11 +4,14 @@ namespace Sintattica\Atk\Ui;
 
 use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Config;
+use Sintattica\Atk\Core\Language;
 use Sintattica\Atk\Core\Menu;
 use Sintattica\Atk\Core\Node;
+use Sintattica\Atk\Core\NodeManager;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Security\SecurityManager;
 use Sintattica\Atk\Session\SessionManager;
+use Sintattica\Atk\Utils\Debugger;
 
 /**
  * Class that generates an index page.
@@ -29,36 +32,51 @@ class IndexPage
      * @var Output
      */
     public $m_output;
+    public $m_user;
+    public $m_title;
+    public $m_extrabodyprops;
+    public $m_extraheaders;
+
 
     /*
      * @var array
      */
-    public $m_user;
-
-    public $m_title;
-    public $m_extrabodyprops;
-    public $m_extraheaders;
     public $m_username;
     public $m_defaultDestination;
     public $m_flags;
-
-    private $atk;
+    protected $m_menu;
+    protected $securityManager;
+    protected $language;
+    protected $debugger;
+    protected $nodeManager;
+    protected $sessionManager;
 
     /**
      * Constructor
-     * @param $atk Atk
-     *
+     * @param Page $page
+     * @param Ui $ui
+     * @param Output $output
+     * @param Menu $menu
+     * @param SecurityManager $securityManager
+     * @param Language $language
+     * @param Debugger $debugger
+     * @param NodeManager $nodeManager
+     * @param SessionManager $sessionManager
      * @return IndexPage
      */
-    public function __construct(Atk $atk)
+    public function __construct(Page $page, Ui $ui, Output $output, Menu $menu, SecurityManager $securityManager, Language $language, Debugger $debugger, NodeManager $nodeManager, SessionManager $sessionManager)
     {
-        global $ATK_VARS;
-        $this->atk = $atk;
-        $this->m_page = Page::getInstance();
-        $this->m_ui = Ui::getInstance();
-        $this->m_output = Output::getInstance();
-        $this->m_user = SecurityManager::atkGetUser();
-        $this->m_flags = array_key_exists('atkpartial', $ATK_VARS) ? Page::HTML_PARTIAL : Page::HTML_STRICT;
+        $this->m_page = $page;
+        $this->m_ui = $ui;
+        $this->m_output = $output;
+        $this->m_menu = $menu;
+        $this->securityManager = $securityManager;
+        $this->language = $language;
+        $this->debugger = $debugger;
+        $this->nodeManager = $nodeManager;
+        $this->sessionManager = $sessionManager;
+        $this->m_user = $securityManager->atkGetUser();
+        $this->m_flags = array_key_exists('atkpartial', Atk::$ATK_VARS) ? Page::HTML_PARTIAL : Page::HTML_STRICT;
     }
 
     /**
@@ -79,26 +97,22 @@ class IndexPage
     public function generate()
     {
         if (!$this->hasFlag(Page::HTML_PARTIAL)) {
-            /** @var Menu $menuClass */
-            $menuClass = Config::getGlobal('menu');
-            $menuObj = $menuClass::getInstance();
             $user = $this->m_username ?: $this->m_user['name'];
 
-
             if (Config::getGlobal('menu_show_user') && $user) {
-                $menuObj->addMenuItem($user,'', 'main', true, 0, '', '', 'right', true);
+                $this->m_menu->addMenuItem($user, '', 'main', true, 0, '', '', 'right', true);
             }
 
             if (Config::getGlobal('menu_show_logout_link') && $user) {
-                $menuObj->addMenuItem('<span class="glyphicon glyphicon-log-out"></span>',
+                $this->m_menu->addMenuItem('<span class="glyphicon glyphicon-log-out"></span>',
                     Config::getGlobal('dispatcher').'?atklogout=1', 'main', true, 0, '', '', 'right', true
                 );
             }
 
             $top = $this->m_ui->renderBox(array(
-                'title' => ($this->m_title != '' ?: Tools::atktext('app_title')),
-                'app_title' => Tools::atktext('app_title'),
-                'menu' => $menuObj->getMenu(),
+                'title' => ($this->m_title != '' ?: $this->language->trans('app_title')),
+                'app_title' => $this->language->trans('app_title'),
+                'menu' => $this->m_menu->getMenu(),
             ), 'top');
             $this->m_page->addContent($top);
         }
@@ -159,35 +173,34 @@ class IndexPage
      */
     public function atkGenerateDispatcher()
     {
-        global $ATK_VARS;
-        $session = &SessionManager::getSession();
+        $session = &$this->sessionManager->getSession();
 
         if ($session['login'] != 1) {
             // no nodetype passed, or session expired
 
             $destination = '';
-            if (isset($ATK_VARS['atknodeuri']) && isset($ATK_VARS['atkaction'])) {
-                $destination = '&atknodeuri='.$ATK_VARS['atknodeuri'].'&atkaction='.$ATK_VARS['atkaction'];
-                if (isset($ATK_VARS['atkselector'])) {
-                    $destination .= '&atkselector='.$ATK_VARS['atkselector'];
+            if (isset(Atk::$ATK_VARS['atknodeuri']) && isset(Atk::$ATK_VARS['atkaction'])) {
+                $destination = '&atknodeuri='.Atk::$ATK_VARS['atknodeuri'].'&atkaction='.Atk::$ATK_VARS['atkaction'];
+                if (isset(Atk::$ATK_VARS['atkselector'])) {
+                    $destination .= '&atkselector='.Atk::$ATK_VARS['atkselector'];
                 }
             }
 
             $box = $this->m_ui->renderBox(array(
-                'title' => Tools::atktext('title_session_expired'),
-                'content' => '<br><br>'.Tools::atktext('explain_session_expired').'<br><br><br><br>
-                                           <a href="'.Config::getGlobal('dispatcher').'?atklogout=true'.$destination.'" target="_top">'.Tools::atktext('relogin').'</a><br><br>',
+                'title' => $this->language->trans('title_session_expired'),
+                'content' => '<br><br>'.$this->language->trans('explain_session_expired').'<br><br><br><br>
+                                           <a href="'.Config::getGlobal('dispatcher').'?atklogout=true'.$destination.'" target="_top">'.$this->language->trans('relogin').'</a><br><br>',
             ));
 
             $this->m_page->addContent($box);
 
-            $this->m_output->output($this->m_page->render(Tools::atktext('title_session_expired'), true));
+            $this->m_output->output($this->m_page->render($this->language->trans('title_session_expired'), true));
         } else {
 
             // Create node
-            if (isset($ATK_VARS['atknodeuri'])) {
-                $node = $this->atk->atkGetNode($ATK_VARS['atknodeuri']);
-                $this->loadDispatchPage($ATK_VARS, $node);
+            if (isset(Atk::$ATK_VARS['atknodeuri'])) {
+                $node = $this->nodeManager->getNode(Atk::$ATK_VARS['atknodeuri']);
+                $this->loadDispatchPage(Atk::$ATK_VARS, $node);
             } else {
                 if (is_array($this->m_defaultDestination)) {
                     // using dispatch_url to redirect to the node
@@ -217,8 +230,8 @@ class IndexPage
     public function getContent()
     {
         $box = $this->m_ui->renderBox([
-            'title' => Tools::atktext('app_shorttitle'),
-            'content' => Tools::atktext('app_description'),
+            'title' => $this->language->trans('app_shorttitle'),
+            'content' => $this->language->trans('app_description'),
 
         ]);
 
@@ -253,11 +266,10 @@ class IndexPage
         }
 
         $page = $node->getPage();
-        $page->setTitle(Tools::atktext('app_shorttitle').' - '.$node->getUi()->title($node->m_module, $node->m_type, $node->m_action));
+        $page->setTitle($this->language->trans('app_shorttitle').' - '.$node->getUi()->nodeTitle($node, $node->m_action));
 
         if ($node->allowed($node->m_action)) {
-            $secMgr = SecurityManager::getInstance();
-            $secMgr->logAction($node->m_type, $node->m_action);
+            $this->securityManager->logAction($node->m_type, $node->m_action);
             $node->callHandler($node->m_action);
             $id = '';
 
@@ -265,7 +277,7 @@ class IndexPage
                 $atkSelectorDecoded = [];
 
                 foreach ($node->m_postvars['atkselector'] as $rowIndex => $selector) {
-                    list($selector, $pk) = explode('=', $selector);
+                    list(, $pk) = explode('=', $selector);
                     $atkSelectorDecoded[] = $pk;
                     $id = implode(',', $atkSelectorDecoded);
                 }
@@ -282,6 +294,7 @@ class IndexPage
         }
     }
 
+
     /**
      * Render a generic access denied page.
      *
@@ -291,15 +304,15 @@ class IndexPage
      */
     private function accessDeniedPage($nodeType)
     {
-        $content = '<br><br>'.Tools::atktext('error_node_action_access_denied', '', $nodeType).'<br><br><br>';
+        $content = '<br><br>'.$this->language->trans('error_node_action_access_denied', '', $nodeType).'<br><br><br>';
 
         $blocks = [
             $this->m_ui->renderBox(array(
-                'title' => Tools::atktext('access_denied'),
+                'title' => $this->language->trans('access_denied'),
                 'content' => $content,
             )),
         ];
 
-        return $this->m_ui->render('actionpage.tpl', array('blocks' => $blocks, 'title' => Tools::atktext('access_denied')));
+        return $this->m_ui->render('actionpage.tpl', array('blocks' => $blocks, 'title' => $this->language->trans('access_denied')));
     }
 }

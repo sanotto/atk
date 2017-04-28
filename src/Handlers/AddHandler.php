@@ -6,6 +6,7 @@ use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Session\State;
 use Sintattica\Atk\Session\SessionManager;
+use Sintattica\Atk\Utils\Debugger;
 
 /**
  * Handler for the 'add' action of a node. It draws a page where the user
@@ -26,12 +27,13 @@ class AddHandler extends ActionHandler
 
     /**
      * Constructor.
+     * @param Debugger $debugger
      *
      * @return AddHandler
      */
-    public function __construct()
+    public function __construct(Debugger $debugger)
     {
-        parent::__construct();
+        parent::__construct($debugger);
         $this->setReturnBehaviour(self::ATK_ACTION_BACK);
     }
 
@@ -154,15 +156,9 @@ class AddHandler extends ActionHandler
     public function getAddParams($record = null)
     {
         $node = $this->m_node;
-        $ui = $node->getUi();
-
-        if (!is_object($ui)) {
-            Tools::atkerror('ui object failure');
-
-            return false;
-        }
 
         $params = $node->getDefaultActionParams();
+        $params['atkmessages'] = $this->sessionManager->getMessageQueue()->getMessages();
         $params['title'] = $node->actionTitle('add');
         $params['header'] = $this->invoke('addHeader', $record);
         $params['formstart'] = $this->getFormStart();
@@ -193,12 +189,12 @@ class AddHandler extends ActionHandler
      */
     public function getFormStart()
     {
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
         $node = $this->m_node;
 
         $formstart = '<form id="entryform" name="entryform" enctype="multipart/form-data" action="'.Config::getGlobal('dispatcher').'"'.' method="post" onsubmit="return globalSubmit(this,false)" autocomplete="off" class="form-horizontal">';
 
-        $formstart .= $sm->formState(SessionManager::SESSION_NESTED, $this->getReturnBehaviour(), $node->getEditFieldPrefix());
+        $formstart .= $sm->formState($this->sessionManager::SESSION_NESTED, $this->getReturnBehaviour(), $node->getEditFieldPrefix());
         $formstart .= '<input type="hidden" name="'.$this->getNode()->getEditFieldPrefix().'atkaction" value="'.$this->getSaveAction().'" />';
         $formstart .= '<input type="hidden" name="'.$this->getNode()->getEditFieldPrefix().'atkprevaction" value="'.$this->getNode()->m_action.'" />';
         $formstart .= '<input type="hidden" name="'.$this->getNode()->getEditFieldPrefix().'atkcsrftoken" value="'.$this->getCSRFToken().'" />';
@@ -324,7 +320,7 @@ class AddHandler extends ActionHandler
 
         $attr = $this->m_node->getAttribute($attribute);
         if ($attr == null) {
-            Tools::atkerror("Unknown / invalid attribute '$attribute' for node '".$this->m_node->atkNodeUri()."'");
+            throw new AtkErrorException("Unknown / invalid attribute '$attribute' for node '".$this->m_node->atkNodeUri()."'");
 
             return '';
         }

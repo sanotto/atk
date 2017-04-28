@@ -2,6 +2,7 @@
 
 namespace Sintattica\Atk\Handlers;
 
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Relations\OneToOneRelation;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Core\Tools;
@@ -19,6 +20,7 @@ use Sintattica\Atk\Core\Config;
  */
 class ImportHandler extends ActionHandler
 {
+    /** @var  Node $m_importNode */
     public $m_importNode;
 
     /**
@@ -28,23 +30,21 @@ class ImportHandler extends ActionHandler
      */
     public function action_import()
     {
-        global $ATK_VARS;
-
         //need to keep the postdata after a Attribute::AF_LARGE selection in the allfield
-        if (!isset($this->m_postvars['phase']) && isset($ATK_VARS['atkformdata'])) {
-            foreach ($ATK_VARS['atkformdata'] as $key => $value) {
+        if (!isset($this->m_postvars['phase']) && isset(Atk::$ATK_VARS['atkformdata'])) {
+            foreach (Atk::$ATK_VARS['atkformdata'] as $key => $value) {
                 $this->m_postvars[$key] = $value;
             }
         }
 
         $keys = [];
         //need to keep the selected item after an importerror
-        if (is_array($ATK_VARS['allFields'])) {
-            $keys = array_keys($ATK_VARS['allFields']);
+        if (is_array(Atk::$ATK_VARS['allFields'])) {
+            $keys = array_keys(Atk::$ATK_VARS['allFields']);
         }
         foreach ($keys as $key) {
-            if (!isset($ATK_VARS[$ATK_VARS['allFields'][$key].'_newsel'])) {
-                $ATK_VARS[$ATK_VARS['allFields'][$key].'_newsel'] = $ATK_VARS[$ATK_VARS['allFields'][$key]];
+            if (!isset(Atk::$ATK_VARS[Atk::$ATK_VARS['allFields'][$key].'_newsel'])) {
+                Atk::$ATK_VARS[Atk::$ATK_VARS['allFields'][$key].'_newsel'] = Atk::$ATK_VARS[Atk::$ATK_VARS['allFields'][$key]];
             }
         }
 
@@ -99,7 +99,7 @@ class ImportHandler extends ActionHandler
      */
     public function importPage($phase, $content)
     {
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
         $action = Config::getGlobal('dispatcher');
 
         $formStart = '<form id="entryform" name="entryform" enctype="multipart/form-data" action="'.$action.'" method="post">'.$sm->formState($sm->atkLevel() == 0 ? SessionManager::SESSION_NESTED : SessionManager::SESSION_REPLACE).'<input type="hidden" name="atknodeuri" value="'.$this->m_node->atkNodeUri().'" />'.'<input type="hidden" name="atkaction" value="'.$this->m_node->m_action.'" />';
@@ -139,14 +139,13 @@ class ImportHandler extends ActionHandler
      * Get import buttons.
      *
      * @param string $phase import phase ('init', 'upload', 'process', 'analyze')
+     * @return array
      */
     public function getImportButtons($phase)
     {
         $result = [];
-        $sm = SessionManager::getInstance();
-
-        if ($sm->atkLevel() > 0) {
-            $result[] = Tools::atkButton($this->m_node->text('cancel', 'atk'), '', SessionManager::SESSION_BACK, true);
+        if ($this->sessionManager->atkLevel() > 0) {
+            $result[] = $this->sessionManager->button($this->m_node->text('cancel', 'atk'), '', SessionManager::SESSION_BACK, true);
         }
         if ($phase == 'init') {
             $result[] = '<input class="btn btn-primary" type="submit" value="'.$this->m_node->text('import_upload').'">';
@@ -219,7 +218,7 @@ class ImportHandler extends ActionHandler
      */
     public function doAnalyze($fileid, $importerrors = array())
     {
-        $sessionMgr = SessionManager::getInstance();
+        $sessionMgr = $this->sessionManager;
         $filename = $this->getTmpFileDestination($fileid);
 
         $rows = $this->getSampleRows($filename);
@@ -866,7 +865,7 @@ class ImportHandler extends ActionHandler
      */
     public function hasRelationAttribute($attrname)
     {
-        return in_array(get_class($this->getUsableAttribute($attrname)), array('atkmanytoonerelation', 'atkmanytoonetreerelation'));
+        return in_array(get_class($this->getUsableAttribute($attrname)), array('atkmanytoonerelation'));
     }
 
     /**
@@ -1115,7 +1114,7 @@ class ImportHandler extends ActionHandler
         $this->clearCache();
 
         // register message
-        $messageQueue = MessageQueue::getInstance();
+        $messageQueue = $this->sessionManager->getMessageQueue();
 
         $count = count((array)$validated['validatedrecs']['add']) + count((array)$validated['validatedrecs']['update']);
         if ($count == 0) {
@@ -1170,13 +1169,13 @@ class ImportHandler extends ActionHandler
         static $mb_converting_exists = null;
         if (!isset($mb_converting_exists)) {
             $mb_converting_exists = function_exists('mb_convert_encoding');
-            Tools::atkdebug('Checking function_exists("mb_convert_encoding")');
+            $this->debugger->addDebug('Checking function_exists("mb_convert_encoding")');
         }
 
         static $atkCharset = null;
         if (!isset($atkCharset)) {
             $atkCharset = Tools::atkGetCharset();
-            Tools::atkdebug('setting atkcharset static!');
+            $this->debugger->addDebug('setting atkcharset static!');
         }
 
         //copy the csv in a record and add it to the db
@@ -1185,7 +1184,7 @@ class ImportHandler extends ActionHandler
             $line = fgets($fp);
         }
         for ($line = fgets($fp), $counter = 1; $line !== false; $line = fgets($fp), $counter++) {
-            Tools::atkdebug("Validating record nr. $counter");
+            $this->debugger->addDebug("Validating record nr. $counter");
             //if we have an empty line, pass it
             if (trim($line) == '') {
                 continue;
@@ -1194,7 +1193,7 @@ class ImportHandler extends ActionHandler
             //large import are a problem for the maximum execution time, so we want to set for each
             //loop of the for-loop an maximum execution time
             set_time_limit(60);
-            Tools::atkdebug('set_time_limit(60)');
+            $this->debugger->addDebug('set_time_limit(60)');
 
             if ($atkCharset != '' && $mb_converting_exists) {
                 $line = mb_convert_encoding($line, $atkCharset);
@@ -1258,7 +1257,7 @@ class ImportHandler extends ActionHandler
                 if (!array_key_exists($attributename, $searchresults) || (array_key_exists($attributename, $searchresults) && !array_key_exists($value,
                             $searchresults[$attributename]))
                 ) {
-                    Tools::atkdebug("Caching attributeValue result for $attributename ($value)");
+                    $this->debugger->addDebug("Caching attributeValue result for $attributename ($value)");
                     $searchresults[$attributename][$value] = $attr->m_destInstance->searchDb($value);
                 }
 
@@ -1327,7 +1326,7 @@ class ImportHandler extends ActionHandler
         foreach ($validatedrecs as $action => $validrecs) {
             foreach ($validrecs as $validrec) {
                 ++$counter;
-                Tools::atkdebug("Doing $action for record nr $counter");
+                $this->debugger->addDebug("Doing $action for record nr $counter");
 
                 $this->$action($validrec);
                 if (!empty($validrec['atkerror'])) {
@@ -1592,7 +1591,7 @@ class ImportHandler extends ActionHandler
      */
     public function prepareUpdateRecord(&$record)
     {
-        $sessionManager = SessionManager::getInstance();
+        $sessionManager = $this->sessionManager;
         // The keys to update the record on
         $updatekey1 = $this->m_postvars['updatekey1'];
         $updatekey1val = $this->getValueFromRecord($record, $updatekey1);

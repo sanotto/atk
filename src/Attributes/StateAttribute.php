@@ -1,7 +1,6 @@
 <?php
 
 namespace Sintattica\Atk\Attributes;
-use Sintattica\Atk\Core\Language;
 
 /**
  * The StateAttribute class represents an attribute to handle United States in a listbox.
@@ -114,7 +113,7 @@ class StateAttribute extends ListAttribute
     public function edit($record, $fieldprefix, $mode)
     {
         if ($this->m_defaulttocurrent && !$record[$this->fieldName()]) {
-            $record[$this->fieldName()] = strtoupper(Language::getLanguage());
+            $record[$this->fieldName()] = strtoupper($this->getOwnerInstance()->getLanguage()::getLanguage());
         }
 
         return parent::edit($record, $fieldprefix, $mode);

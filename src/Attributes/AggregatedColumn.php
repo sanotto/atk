@@ -118,7 +118,7 @@ class AggregatedColumn extends Attribute
                     $order = implode(' DESC,', $rec);
                     $order .= ' DESC';
                 }
-                $sm = SessionManager::getInstance();
+                $sm = $this->getOwnerInstance()->getSessionManager();
                 $arr['heading'][$fieldprefix.$this->fieldName()]['url'] = $sm->sessionUrl(Config::getGlobal('dispatcher').'?atknodeuri='.$this->m_ownerInstance->atkNodeUri().'&atkaction='.$action.'&atkorderby='.rawurlencode($order));
             }
 

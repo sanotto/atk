@@ -1,6 +1,5 @@
 {if isset($formstart)}{$formstart}{/if}
 <div>
-    {atkmessages}
     {if count($atkmessages)}
         <div class="row">
             <div class="col-md-12">

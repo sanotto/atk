@@ -18,9 +18,6 @@ use Sintattica\Atk\Utils\Debugger;
  * takes care of sending error reports to the email address, if any errors
  * occurred during script execution.
  *
- * The Output class is a singleton. The one-and-only instance should be
- * retrieved with the getInstance() method.
- *
  * @author Ivo Jansch <ivo@achievo.org>
  */
 class Output
@@ -37,6 +34,10 @@ class Output
      */
     public $m_content = '';
 
+    protected $debugger;
+
+    protected static $s_instance = null;
+
     /**
      * Retrieve the one-and-only Output instance.
      *
@@ -44,13 +45,13 @@ class Output
      */
     public static function getInstance()
     {
-        static $s_instance = null;
-        if ($s_instance == null) {
-            Tools::atkdebug('Created a new Output instance');
-            $s_instance = new self();
-        }
+        return self::$s_instance;
+    }
 
-        return $s_instance;
+    public function __construct(Debugger $debugger)
+    {
+        self::$s_instance = $this;
+        $this->debugger = $debugger;
     }
 
     /**
@@ -101,7 +102,6 @@ class Output
      */
     public static function sendNoCacheHeaders()
     {
-        Tools::atkdebug('Sending no-cache headers (lmd: '.gmdate('D, d M Y H:i:s').' GMT)');
         self::header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');    // Date in the past
         self::header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT'); // always modified
         self::header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -124,8 +124,6 @@ class Output
      */
     public function outputFlush($nocache = true, $lastmodificationstamp = '', $charset = '')
     {
-        global $g_error_msg;
-
         if (strlen($this->m_raw) > 0) {
             $res = $this->m_raw;
         } else {
@@ -136,9 +134,7 @@ class Output
             self::header('Content-Type: text/html; charset='.($charset == '' ? Tools::atkGetCharset() : $charset));
 
             $res = $this->m_content;
-            
-            $debugger = Debugger::getInstance();
-            $res .= $debugger->renderDebugAndErrorMessages();
+            $res .= $this->debugger->renderDebugAndErrorMessages();
         }
 
         if (Config::getGlobal('output_gzip') && phpversion() >= '4.0.4pl1' && (strstr($_SERVER['HTTP_USER_AGENT'],
@@ -159,10 +155,9 @@ class Output
      */
     public function getDebugging()
     {
-        global $g_debug_msg;
-        if (Config::getGlobal('debug') > 0) {
+        if ($this->debugger->getDebugLevel() > 0) {
             $output = '<br><div style="font-family: monospace; font-size: 11px;" align="left" id="atk_debugging_div">'.implode("<br>\n ",
-                    $g_debug_msg).'</div>';
+                    $this->debugger->getDebugMessages()).'</div>';
 
             return $output;
         }

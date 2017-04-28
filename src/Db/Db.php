@@ -4,8 +4,10 @@ namespace Sintattica\Atk\Db;
 
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Tools;
-use Sintattica\Atk\Utils\TmpFile;
 use Sintattica\Atk\Db\Statement\Statement;
+use Sintattica\Atk\Errors\AtkErrorException;
+use Sintattica\Atk\Utils\Debugger;
+use Sintattica\Atk\Utils\TmpFile;
 
 /**
  * Abstract baseclass for ATK database drivers.
@@ -37,99 +39,73 @@ class Db
     const MF_AUTO_INCREMENT = 8;
 
     /*
-     * The hostname/ip to connect to.
-     * @access private
-     * @var String
+     * The hostname/ip to connect to
      */
     public $m_host = '';
 
     /*
-     * The name of the database/schema to use.
-     * @access private
-     * @var String
+     * The name of the database/schema to use
      */
     public $m_database = '';
 
     /*
-     * The username for the connection.
-     * @access private
-     * @var String
+     * The username for the connection
      */
     public $m_user = '';
 
     /*
-     * The password for the connection.
-     * @access private
-     * @var String
+     * The password for the connection
      */
     public $m_password = '';
 
     /*
-     * The port for the connection.
-     * @access private
-     * @var String
+     * The port for the connection
      */
     public $m_port = '';
 
     /*
-     * The character set.
-     * @access private
-     * @var String
+     * The character set
      */
     public $m_charset = '';
 
     /*
-     * The collate.
-     * @access private
-     * @var String
+     * The collate
      */
     public $m_collate = '';
 
     /*
-     * Force case insensitive searching and ordering.
-     * @var boolean
+     * Force case insensitive searching and ordering
      */
-    protected $m_force_ci = false;
+    public $m_force_ci = false;
 
     /*
      * The mode for the connection.
-     * @access private
-     * @var String
      */
     public $m_mode = '';
 
     /*
      * The current connection name.
-     * @access private
-     * @var String
      */
     public $m_connection = '';
 
     /*
-     * Contains the current record from the result set.
-     * @access private
-     * @var array
+     * Contains the current record from the result set
      */
     public $m_record = [];
 
     /*
      * Current row number
-     * @access private
-     * @var int
      */
     public $m_row = 0;
 
     /*
-     * Contains error number, in case an error occurred.
-     * @access private
+     * Contains error number, in case an error occurred
      * @var int
      */
     public $m_errno = 0;
 
     /*
-     * Contains textual error message, in case an error occurred.
-     * @access private
-     * @var String
+     * Contains textual error message, in case an error occurred
      */
     public $m_error = '';
 
@@ -138,10 +114,7 @@ class Db
      *
      * The calling script can use this to stop execution and rollback.
      * If false, the error will be ignored and script execution
-     * continues. Use this only for queries that may fail but still
-     * be valid.
-     * @access private
-     * @var boolean
+     * continues. Use this only for queries that may fail but still be valid.
      */
     public $m_haltonerror = true;
 
@@ -150,9 +123,6 @@ class Db
      *
      * Derived classes should add their own m_type var to the class
      * definition and put the correct name in it. (e.g. "mysql" etc.)
-     * @abstract
-     * @access private
-     * @var String
      */
     public $m_type = '';
 
@@ -161,36 +131,27 @@ class Db
      *
      * This is mainly used to retrieve things like error messages that are
      * common for a vendor (i.e., they do not differ between versions).
-     * @abstract
-     * @access private
-     * @var String
      */
     public $m_vendor = '';
 
     /*
      * number of affected rows after an update/delete/insert query
-     * @access private
-     * @var int
      */
     public $m_affected_rows = 0;
 
     /*
-     * array to cache meta-information about tables.
-     * @access private
-     * @var array
+     * array to cache meta-information about tables
      */
     public $m_tableMeta = [];
 
     /**
-     * The connection is stored in this variable.
-     * @access private
+     * The connection is stored in this variable
      * @var mixed $m_link_id
      */
     public $m_link_id;
 
     /**
-     * The query statement is stored in this variable.
-     * @access private
+     * The query statement is stored in this variable
      * @var mixed $m_query_id
      */
     public $m_query_id;
@@ -200,39 +161,35 @@ class Db
      *
      * When set to true, the previous results are cleared when a new query is
      * executed. It should generally not be necessary to put this to false.
-     * @access private
-     * @var boolean
      */
     public $m_auto_free = true;
 
     /*
      * List of error codes that could be caused by an end-user.
      *
-     * This type of errors is 'recoverable'. An example is a violation of a
-     * unique constraint.
-     * @access private
-     * @var array
+     * This type of errors is 'recoverable'. An example is a violation of a unique constraint.
      */
     public $m_user_error = [];
 
     /*
      * Internal use; error messages from language files are cached here
-     * @access private
      */
     public $m_errorLookup = [];
 
-    /**
-     * Indentifier Quoting.
-     *
-     * @var array
+    /*
+     * Indentifier Quoting
      */
     protected $m_identifierQuoting = array('start' => '"', 'end' => '"', 'escape' => '"');
 
+    protected $debugger;
+
     /**
      * Constructor.
+     * @param Debugger $debugger
      */
-    public function __construct()
+    public function __construct(Debugger $debugger)
     {
+        $this->debugger = $debugger;
     }
 
     /**
@@ -245,77 +202,7 @@ class Db
      */
     public function setSequenceValue($seqname, $value)
     {
-        Tools::atkerror('WARNING: '.get_class($this).'.setSequenceValue NOT IMPLEMENTED!');
-    }
-
-    /**
-     * Use the given mapping to translate database requests
-     * from one database to another database. This can be
-     * used for test purposes.
-     *
-     * @param array $mapping database mapping
-     * @static
-     */
-    public function useMapping($mapping)
-    {
-        self::_getOrUseMapping($mapping);
-    }
-
-    /**
-     * Returns the current database mapping.
-     * NULL if no mapping is active.
-     *
-     * @return mixed current database mapping (null if inactive)
-     * @static
-     */
-    public static function getMapping()
-    {
-        return self::_getOrUseMapping();
-    }
-
-    /**
-     * Clear the current database mapping.
-     *
-     * @static
-     */
-    public function clearMapping()
-    {
-        self::_getOrUseMapping(null);
-    }
-
-    /**
-     * Returns the real database name. If a mapping
-     * exists the mapping is used to translate the
-     * database name to it's real database name. If
-     * the database name is not part of the mapping or
-     * no mapping is set the given name will be returned.
-     *
-     * @param string $name database name
-     * @return string
-     */
-    public static function getTranslatedDatabaseName($name)
-    {
-        $mapping = self::getMapping();
-
-        return $mapping === null || !isset($mapping[$name]) ? $name : $mapping[$name];
-    }
-
-    /**
-     * Get or set the database mapping.
-     *
-     * @param string $mapping database mapping
-     *
-     * @return mixed current database mapping (null if inactive)
-     * @static
-     */
-    protected static function _getOrUseMapping($mapping = 'get')
-    {
-        static $s_mapping = null;
-        if ($mapping !== 'get') {
-            $s_mapping = $mapping;
-        } else {
-            return $s_mapping;
-        }
+        throw new AtkErrorException('WARNING: '.get_class($this).'.setSequenceValue NOT IMPLEMENTED!');
     }
 
     /**
@@ -407,7 +294,7 @@ class Db
      */
     public function setUserError($errno)
     {
-        Tools::atkdebug(__CLASS__.'::setUserError() -> '.$errno);
+        $this->debugger->addDebug(__CLASS__.'::setUserError() -> '.$errno);
         $this->m_user_error[] = $errno;
     }
 
@@ -428,8 +315,6 @@ class Db
                 return 'r';
             }
         }
-
-        Tools::atknotice('Query mode not detected! Using write mode.');
 
         return 'w';
     }
@@ -461,7 +346,7 @@ class Db
         if ($errno == self::DB_UNKNOWNERROR) {
             $errstr = $this->errorLookup($this->getDbErrno());
             if ($errstr == '') {
-                $this->m_error = Tools::atktext('unknown_error').': '.$this->getDbErrno().' ('.$this->getDbError().')';
+                $this->m_error = 'unknown_error: '.$this->getDbErrno().' ('.$this->getDbError().')';
             } else {
                 $this->m_error = $errstr.($this->getErrorType() == 'system' ? ' ('.$this->getDbError().')' : '');
             }
@@ -471,16 +356,16 @@ class Db
             $tmp_error = '';
             switch ($errno) {
                 case self::DB_ACCESSDENIED_DB:
-                    $tmp_error = sprintf(Tools::atktext('db_access_denied_database', 'atk'), $this->m_user, $this->m_database);
+                    $tmp_error = sprintf('db_access_denied_database %s %s', $this->m_user, $this->m_database);
                     break;
                 case self::DB_ACCESSDENIED_USER:
-                    $tmp_error = sprintf(Tools::atktext('db_access_denied_user', 'atk'), $this->m_user, $this->m_database);
+                    $tmp_error = sprintf('db_access_denied_user %s %s', $this->m_user, $this->m_database);
                     break;
                 case self::DB_UNKNOWNDATABASE:
-                    $tmp_error = sprintf(Tools::atktext('db_unknown_database', 'atk'), $this->m_database);
+                    $tmp_error = sprintf('db_unknown_database %s', $this->m_database);
                     break;
                 case self::DB_UNKNOWNHOST:
-                    $tmp_error = sprintf(Tools::atktext('db_unknown_host', 'atk'), $this->m_host);
+                    $tmp_error = sprintf('db_unknown_host %s', $this->m_host);
                     break;
             }
             $this->m_error = $tmp_error;
@@ -494,21 +379,14 @@ class Db
      * place the error in atkdebug and continue.
      *
      * @param string $message
+     * @throws AtkErrorException
      */
     public function halt($message = '')
     {
         if ($this->m_haltonerror) {
-            if ($this->getErrorType() === 'system') {
-                Tools::atkdebug(__CLASS__.'::halt() on system error');
-                $level = 'warning';
-                if (!in_array($this->m_errno, $this->m_user_error)) {
-                    $level = 'critical';
-                }
-                Tools::atkerror($this->getErrorMsg());
-                Tools::atkhalt($this->getErrorMsg(), $level);
-            } else {
-                Tools::atkdebug(__CLASS__.'::halt() on user error (not halting)');
-            }
+            throw new AtkErrorException($message);
+        } else {
+            $this->debugger->addWarning("DB halt: ".$message);
         }
     }
 
@@ -561,7 +439,7 @@ class Db
     public function connect()
     {
         if ($this->m_link_id == null) {
-            Tools::atkdebug("db::connect -> Don't switch use current db");
+            $this->debugger->addDebug("db::connect -> Don't switch use current db");
 
             return $this->doConnect($this->m_host, $this->m_user, $this->m_password, $this->m_database, $this->m_port, $this->m_charset);
         }
@@ -1006,49 +884,6 @@ class Db
     }
 
     /**
-     * If cached it'll return the table metadata
-     * from cache.
-     *
-     * @param string $table
-     *
-     * @return array
-     */
-    private function _getTableMetaFromCache($table)
-    {
-        $tmpfile = new TmpFile('tablemeta/'.$this->m_connection.'/'.$table.'.php');
-
-        $tablemeta = [];
-        if ($tmpfile->exists()) {
-            include $tmpfile->getPath();
-        } else {
-            $tablemeta = $this->_getTableMetaFromDb($table);
-            $tmpfile->writeAsPhp('tablemeta', $tablemeta);
-        }
-
-        return $tablemeta;
-    }
-
-    /**
-     * Returns the tablemetadata directly from db.
-     *
-     * @param string $table
-     *
-     * @return array
-     */
-    protected function _getTableMetaFromDb($table)
-    {
-        $meta = $this->metadata($table, false);
-
-        $result = [];
-        for ($i = 0, $_i = count($meta); $i < $_i; ++$i) {
-            $meta[$i]['num'] = $i;
-            $result[$meta[$i]['name']] = $meta[$i];
-        }
-
-        return $result;
-    }
-
-    /**
      * get NOW() or SYSDATE() equivalent for the current database.
      *
      * Every database has it's own implementation to get the current date
@@ -1222,10 +1057,11 @@ class Db
      * Enable/disable all foreign key constraints.
      *
      * @param bool $enable enable/disable foreign keys?
+     * @throws AtkErrorException
      */
     public function toggleForeignKeys($enable)
     {
-        Tools::atkdebug('WARNING: '.get_class($this).'::toggleForeignKeys not implemented!');
+        $this->debugger->addDebug('WARNING: '.get_class($this).'::toggleForeignKeys not implemented!');
     }
 
     /**
@@ -1250,7 +1086,7 @@ class Db
         } while ($count < $prevCount && $count > 0);
 
         if ($count > 0) {
-            Tools::atkerror(__CLASS__.'::deleteAll failed, probably because of circular dependencies');
+            throw new AtkErrorException(__CLASS__.'::deleteAll failed, probably because of circular dependencies');
         }
     }
 
@@ -1296,109 +1132,6 @@ class Db
         $ddl->m_db = $this;
 
         return $ddl;
-    }
-
-    /**
-     * Get a new database instance
-     * @param $conn
-     * @param string $mode
-     * @return Db
-     */
-    public static function newInstance($conn = 'default', $mode = 'rw')
-    {
-        // Resolve any potential aliases
-        $conn = self::getTranslatedDatabaseName($conn);
-        $dbconfig = Config::getGlobal('db');
-        $driver = __NAMESPACE__.'\\'.$dbconfig[$conn]['driver'].'Db';
-        Tools::atkdebug("Creating new database instance with '{$driver}' driver");
-
-        /** @var Db $driverInstance */
-        $driverInstance = new $driver();
-
-        return $driverInstance->init($conn, $mode);
-    }
-
-    /**
-     * Get a database instance (singleton)
-     *
-     * This method instantiates and returns the correct (vendor specific)
-     * database instance, depending on the configuration.
-     *
-     * @static
-     *
-     * @param string $conn The name of the connection as defined in the
-     *                      config.inc.php file (defaults to 'default')
-     * @param bool $reset Reset the instance to force the creation of a new instance
-     * @param string $mode The mode to connect with the database
-     *
-     * @return Db Instance of the database class.
-     */
-    public static function getInstance($conn = 'default', $reset = false, $mode = 'rw')
-    {
-        static $s_dbInstances = null;
-        if ($s_dbInstances == null) {
-            $s_dbInstances = [];
-            if (!Config::getGlobal('meta_caching')) {
-                Tools::atkwarning("Table metadata caching is disabled. Turn on \$config_meta_caching to improve your application's performance!");
-            }
-        }
-
-        // Resolve any potential aliases
-        $conn = self::getTranslatedDatabaseName($conn);
-
-        $dbInstance = array_key_exists($conn,$s_dbInstances)?$s_dbInstances[$conn]:null;
-
-        if ($reset || !$dbInstance || !$dbInstance->hasMode($mode)) {
-            $dbconfig = Config::getGlobal('db');
-
-            $driver = __NAMESPACE__.'\\'.$dbconfig[$conn]['driver'].'Db';
-
-            Tools::atkdebug("Creating new database instance with '{$driver}' driver");
-
-            /** @var Db $driverInstance */
-            $driverInstance = new $driver();
-            $dbInstance = $driverInstance->init($conn, $mode);
-            $s_dbInstances[$conn] = $dbInstance;
-        }
-
-        return $dbInstance;
-    }
-
-    /**
-     * (Re)Initialise a database driver with a connection.
-     *
-     * @param string $connectionName The connectionName
-     * @param string $mode The mode to connect with
-     *
-     * @return Db
-     */
-    public function init($connectionName = 'default', $mode = 'r')
-    {
-        Tools::atkdebug("(Re)Initialising database instance with connection name '$connectionName' and mode '$mode'");
-
-        $config = Config::getGlobal('db');
-        $this->m_connection = $connectionName;
-        $this->m_mode = (isset($config[$connectionName]['mode']) ? $config[$connectionName]['mode'] : 'rw');
-        if (isset($config[$connectionName]['db'])) {
-            $this->m_database = $config[$connectionName]['db'];
-            $this->m_user = $config[$connectionName]['user'];
-            $this->m_password = $config[$connectionName]['password'];
-            $this->m_host = $config[$connectionName]['host'];
-            if (isset($config[$connectionName]['port'])) {
-                $this->m_port = $config[$connectionName]['port'];
-            }
-            if (isset($config[$connectionName]['charset'])) {
-                $this->m_charset = $config[$connectionName]['charset'];
-            }
-            if (isset($config[$connectionName]['collate'])) {
-                $this->m_collate = $config[$connectionName]['collate'];
-            }
-            if (isset($config[$connectionName]['force_ci'])) {
-                $this->m_force_ci = $config[$connectionName]['force_ci'];
-            }
-        }
-
-        return $this;
     }
 
     /**
@@ -1491,5 +1224,53 @@ class Db
     public function getForceCaseInsensitive()
     {
         return $this->m_force_ci;
+    }
+
+    public function getDebugger()
+    {
+        return $this->debugger;
+    }
+
+    /**
+     * Returns the tablemetadata directly from db.
+     *
+     * @param string $table
+     *
+     * @return array
+     */
+    protected function _getTableMetaFromDb($table)
+    {
+        $meta = $this->metadata($table, false);
+
+        $result = [];
+        for ($i = 0, $_i = count($meta); $i < $_i; ++$i) {
+            $meta[$i]['num'] = $i;
+            $result[$meta[$i]['name']] = $meta[$i];
+        }
+
+        return $result;
+    }
+
+    /**
+     * If cached it'll return the table metadata
+     * from cache.
+     *
+     * @param string $table
+     *
+     * @return array
+     */
+    private function _getTableMetaFromCache($table)
+    {
+        $tmpfile = new TmpFile('tablemeta/'.$this->m_connection.'/'.$table.'.php');
+
+        $tablemeta = [];
+        if ($tmpfile->exists()) {
+            include $tmpfile->getPath();
+        } else {
+            $tablemeta = $this->_getTableMetaFromDb($table);
+            $tmpfile->writeAsPhp('tablemeta', $tablemeta);
+        }
+
+        return $tablemeta;
     }
 }

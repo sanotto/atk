@@ -6,7 +6,7 @@
         <!-- header -->
         <tr>
             {section name=headerloop loop=$header}
-                <th {if isset($header[headerloop].htmlattributes)}{$header[headerloop].htmlattributes}{/if}
+                <th {if array_key_exists('htmlattributes', $header[headerloop])}{$header[headerloop].htmlattributes}{/if}
                         {if $smarty.section.headerloop.index===0}class="recordListThFirst"{else}class="recordListTh"{/if}>
                     {if $header[headerloop].content != ""}{$header[headerloop].content}{else}&nbsp;{/if}
                 </th>
@@ -31,7 +31,7 @@
             <tr class="recordList-search-row">
                 {$searchstart}
                 {foreach from=$search item=col}
-                    <th class="recordListSearch" {if isset($col.htmlattributes)}{$col.htmlattributes}{/if}>
+                    <th class="recordListSearch" {if array_key_exists('htmlattributes', $col)}{$col.htmlattributes}{/if}>
                         {if $col.content != ""}{$col.content}{else}&nbsp;{/if}
                     </th>
                 {/foreach}
@@ -53,7 +53,7 @@
                 {section name=colloop loop=$row.cols}
                     <{if $row.type == "subtotal"}th{else}td{/if}
                             class="{if $smarty.section.colloop.index===0}recordListTdFirst{else}recordListTd{/if}{if $row.cols[colloop].type == "data" && $recordlist_onclick} clickable{/if} row-type-{$row.cols[colloop].type}"
-                            {if isset($row.cols[colloop].htmlattributes)}{$row.cols[colloop].htmlattributes}{/if}
+                            {if array_key_exists('htmlattributes',$row.cols[colloop])}{$row.cols[colloop].htmlattributes}{/if}
                             {if $row.cols[colloop].type == "data" && $recordlist_onclick} onclick="rl_try('{$listid}', event, {$row.rownum}, ['select', 'edit', 'view'
                     ], false);"{/if}>
                         {if $row.cols[colloop].content != ""}{$row.cols[colloop].content}{else}&nbsp;{/if}
@@ -67,7 +67,7 @@
             <!-- totals row -->
             <tr class="recordList-totals-row">
                 {foreach from=$total item=col}
-                    <th {if isset($col.htmlattributes)}{$col.htmlattributes}{/if}>
+                    <th {if array_key_exists('htmlattributes', $col)}{$col.htmlattributes}{/if}>
                         {if $col.content != ""}{$col.content}{else}&nbsp;{/if}
                     </th>
                 {/foreach}

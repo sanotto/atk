@@ -124,7 +124,7 @@ class ShuttleRelation extends ManyToManyRelation
             $width = min($this->m_maxlistwidth, $width);
         }
 
-        $result = '<table border="0" class="'.$this->get_class_name().'"><tr><td>'.Tools::atktext('available', 'atk').':<br/>';
+        $result = '<table border="0" class="'.$this->get_class_name().'"><tr><td>'.$this->getOwnerInstance()->getLanguage()->trans('available', 'atk').':<br/>';
 
         $fieldname = $fieldprefix.$this->fieldName();
         $leftname = $fieldname.'_sel';
@@ -162,7 +162,7 @@ class ShuttleRelation extends ManyToManyRelation
         $result .= '<button class="btn btn-default" type="button" value="&lt;&lt;" onClick="shuttle_moveall(\''.$rightname.'\', \''.$leftname.'\', \''.$fieldname.'\');return false;"><i class="glyphicon glyphicon-backward"></i></button>';
         $result .= '</div>';
 
-        $result .= '</td><td>'.Tools::atktext('selected', 'atk').':<br/>';
+        $result .= '</td><td>'.$this->getOwnerInstance()->getLanguage()->trans('selected', 'atk').':<br/>';
 
         $result .= $this->_renderSelect($rightname, $right, $width, $leftname, $fieldname, $filterbox_right);
 
@@ -203,7 +203,7 @@ class ShuttleRelation extends ManyToManyRelation
     }
 
     /**
-     * Render the multiselect list control.
+     * Render the select list control.
      *
      * @param string $name The name of the list control
      * @param array $recordset The list of records to render in the control
