@@ -136,8 +136,9 @@ class Node
 
     /**
      * Makes a node cache it's recordlist.
+     * REMOVED!
      */
-    const NF_CACHE_RECORDLIST = 1048576;
+    // const NF_CACHE_RECORDLIST = 1048576;
 
     /**
      * After adding a new record add another one instantaniously.

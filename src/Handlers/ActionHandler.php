@@ -6,7 +6,6 @@ use Exception;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\DataGrid\DataGrid;
-use Sintattica\Atk\RecordList\RecordListCache;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Ui\Page;
 use Sintattica\Atk\Ui\Ui;
@@ -307,34 +306,6 @@ class ActionHandler
         throw new Exception("Undefined method '$methodname' in ActionHandler");
     }
 
-    /**
-     * Get the cached recordlist.
-     *
-     * @return RecordListCache object
-     */
-    public function getRecordlistCache()
-    {
-        static $recordlistcache;
-        if (!$recordlistcache) {
-            $recordlistcache = new RecordListCache($this->m_node);
-            $recordlistcache->setPostvars($this->m_postvars);
-        }
-
-        return $recordlistcache;
-    }
-
-    /**
-     * Clear the recordlist cache.
-     */
-    public function clearCache()
-    {
-        if ($this->m_node->hasFlag(Node::NF_CACHE_RECORDLIST)) {
-            $recordlistcache = $this->getRecordlistCache();
-            if ($recordlistcache) {
-                $recordlistcache->clearCache();
-            }
-        }
-    }
 
     /**
      * Notify the node that an action has occured.

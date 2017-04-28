@@ -46,13 +46,6 @@ class OneToManyRelation extends Relation
     public $m_recordlist;
 
     /*
-     * Instance of atk.recordlist.atkrecordlistcache
-     * @access private
-     * @var Object
-     */
-    public $m_recordlistcache;
-
-    /*
      * List of keys from the destination node that refer to the master record.
      * @access private
      * @var array
