@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\DataGrid;
 
 use Sintattica\Atk\Core\Node;
+use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Ui\Page;
 use Sintattica\Atk\Ui\Ui;
 
@@ -28,6 +29,9 @@ abstract class DataGridComponent
      */
     private $m_options;
 
+    /** @var  SessionManager $sessionManager */
+    protected $sessionManager;
+
     /**
      * Constructor.
      *
@@ -38,6 +42,7 @@ abstract class DataGridComponent
     {
         $this->m_grid = $grid;
         $this->m_options = $options;
+        $this->sessionManager = $grid->getSessionManager();
     }
 
     /**

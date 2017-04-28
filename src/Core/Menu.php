@@ -30,6 +30,14 @@ class Menu
 
     protected $format_single_text = '<li><p class="navbar-text">%s</p></li>';
 
+    protected $page;
+    protected $securityManager;
+
+    protected static $s_instance = null;
+
+    protected $language;
+
+
     /**
      * Get new menu object.
      *
@@ -37,14 +45,18 @@ class Menu
      */
     public static function getInstance()
     {
-        static $s_instance = null;
-        if ($s_instance == null) {
-            Tools::atkdebug('Creating a new menu instance');
-            $s_instance = new static();
-        }
-
-        return $s_instance;
+        return self::$s_instance;
     }
+
+    public function __construct(Page $page, SecurityManager $securityManager, Language $language)
+    {
+        $this->page = $page;
+        $this->securityManager = $securityManager;
+        $this->language = $language;
+
+        self::$s_instance = $this;
+    }
+
 
     /**
      * Translates a menuitem with the menu_ prefix, or if not found without.
@@ -56,9 +68,9 @@ class Menu
      */
     public function getMenuTranslation($menuitem, $modname = 'atk')
     {
-        $s = Tools::atktext("menu_$menuitem", $modname, '', '', '', true);
+        $s = $this->language->trans("menu_$menuitem", $modname, '', '', '', true);
         if (!$s) {
-            $s = Tools::atktext($menuitem, $modname);
+            $s = $this->language->trans($menuitem, $modname);
         }
 
         return $s;
@@ -71,11 +83,10 @@ class Menu
      */
     public function render()
     {
-        $page = Page::getInstance();
         $menu = $this->load();
-        $page->addContent($menu);
+        $this->page->addContent($menu);
 
-        return $page->render('Menu', true);
+        return $this->page->render('Menu', true);
     }
 
     /**
@@ -162,8 +173,6 @@ class Menu
      */
     public function isEnabled($menuitem)
     {
-        $secManager = SecurityManager::getInstance();
-
         $enable = $menuitem['enable'];
         if ((is_string($enable) || (is_array($enable) && count($enable) == 2 && is_object(@$enable[0]))) && is_callable($enable)) {
             $enable = call_user_func($enable);
@@ -171,7 +180,9 @@ class Menu
             if (is_array($enable)) {
                 $enabled = false;
                 for ($j = 0; $j < (count($enable) / 2); ++$j) {
-                    $enabled = $enabled || $secManager->allowed($enable[(2 * $j)], $enable[(2 * $j) + 1]);
+                    $node = $enable[(2 * $j)];
+                    $privilege = $enable[(2 * $j) + 1];
+                    $enabled = $enabled || $this->securityManager->allowed($node, $privilege);
                 }
                 $enable = $enabled;
             } else {
@@ -184,6 +195,7 @@ class Menu
                 }
             }
         }
+
 
         return $enable;
     }

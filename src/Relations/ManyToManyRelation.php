@@ -2,9 +2,9 @@
 
 namespace Sintattica\Atk\Relations;
 
-use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\DataGrid\DataGrid;
+use Sintattica\Atk\Errors\AtkErrorException;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Db\Query;
@@ -230,19 +230,16 @@ class ManyToManyRelation extends Relation
      * variable.
      *
      * @return bool True if successful, false if not.
+     * @throws AtkErrorException
      */
     public function createLink()
     {
         if ($this->m_linkInstance == null) {
-            $atk = Atk::getInstance();
-            $this->m_linkInstance = $atk->newAtkNode($this->m_link);
+            $this->m_linkInstance = $this->getOwnerInstance()->getNodeManager()->createNode($this->m_link);
 
             // Validate if destination was created succesfully
             if (!is_object($this->m_linkInstance)) {
-                Tools::atkerror("Relation with unknown nodetype '".$this->m_link."' (in node '".$this->m_owner."')");
-                $this->m_linkInstance = null;
-
-                return false;
+                throw new AtkErrorException("Relation with unknown nodetype '".$this->m_link."' (in node '".$this->m_owner."')");
             }
         }
 
@@ -396,7 +393,7 @@ class ManyToManyRelation extends Relation
                     $descr = $this->m_destInstance->descriptor($rec);
                 }
                 if ($this->hasFlag(self::AF_MANYTOMANY_DETAILVIEW) && $this->m_destInstance->allowed('view')) {
-                    $descr = Tools::href(Tools::dispatch_url($this->m_destination, 'view', array('atkselector' => $this->getDestination()->primaryKey($rec))),
+                    $descr = $this->getOwnerInstance()->getSessionManager()->href(Tools::dispatch_url($this->m_destination, 'view', array('atkselector' => $this->getDestination()->primaryKey($rec))),
                         $descr, SessionManager::SESSION_NESTED);
                 }
                 $recordset[] = $descr;
@@ -565,7 +562,7 @@ class ManyToManyRelation extends Relation
         $selector = $this->getLink()->primaryKey($record);
 
         if (empty($selector)) {
-            Tools::atkerror('primaryKey-selector for link node is empty. Did you add an self::AF_PRIMARY flag to the primary key field(s) of the intermediate node? Deleting records aborted to prevent dataloss.');
+            throw new AtkErrorException('primaryKey-selector for link node is empty. Did you add an self::AF_PRIMARY flag to the primary key field(s) of the intermediate node? Deleting records aborted to prevent dataloss.');
 
             return false;
         }
@@ -758,7 +755,7 @@ class ManyToManyRelation extends Relation
         $selectOptions['dropdown-auto-width'] = true;
         $selectOptions['minimum-results-for-search'] = 10;
         if ($extended) {
-            $selectOptions['placeholder'] = Tools::atktext('search_all');
+            $selectOptions['placeholder'] = $this->getOwnerInstance()->getLanguage()->trans('search_all');
         }
 
         //width always auto
@@ -784,7 +781,7 @@ class ManyToManyRelation extends Relation
         $pkfield = $this->m_destInstance->primaryKeyField();
 
         if (!$extended) {
-            $result .= '<option value="">'.Tools::atktext('search_all', 'atk').'</option>';
+            $result .= '<option value="">'.$this->getOwnerInstance()->getLanguage()->trans('search_all', 'atk').'</option>';
         }
 
         for ($i = 0; $i < count($recordset); ++$i) {

@@ -11,15 +11,15 @@ abstract class Module
 {
     public static $module;
 
-    /** @var Atk $atk */
-    private $atk;
+    /** @var NodeManager $nodeManager */
+    private $nodeManager;
 
     /** @var Menu $menu */
     private $menu;
 
-    public function __construct(Atk $atk, Menu $menu)
+    public function __construct(NodeManager $nodeManager, Menu $menu)
     {
-        $this->atk = $atk;
+        $this->nodeManager = $nodeManager;
         $this->menu = $menu;
     }
 
@@ -28,9 +28,9 @@ abstract class Module
         return $this->menu;
     }
 
-    protected function getAtk()
+    protected function getNodeManager()
     {
-        return $this->atk;
+        return $this->nodeManager;
     }
 
     abstract public function register();
@@ -42,7 +42,7 @@ abstract class Module
 
     public function registerNode($nodeName, $nodeClass, $actions = null)
     {
-        $this->atk->registerNode(static::$module.'.'.$nodeName, $nodeClass, $actions);
+        $this->nodeManager->registerNode(static::$module.'.'.$nodeName, $nodeClass, $actions);
     }
 
     public function addNodeToMenu($menuName, $nodeName, $action, $parent = 'main', $enable = null, $order = 0, $navbar = 'left')

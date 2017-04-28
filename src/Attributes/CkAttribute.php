@@ -23,12 +23,27 @@ class CkAttribute extends HtmlAttribute
             ['name' => 'insert', 'items' => ['Image', 'Table', 'HorizontalRule', 'SpecialChar']],
             '/',
             ['name' => 'basicstyles', 'items' => ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat']],
-            ['name' => 'paragraph', 'items' => ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock']],
+            ['name' => 'paragraph',
+                'items' => [
+                    'NumberedList',
+                    'BulletedList',
+                    '-',
+                    'Outdent',
+                    'Indent',
+                    '-',
+                    'Blockquote',
+                    '-',
+                    'JustifyLeft',
+                    'JustifyCenter',
+                    'JustifyRight',
+                    'JustifyBlock',
+                ],
+            ],
             ['name' => 'styles', 'items' => ['Format', 'FontSize']],
             ['name' => 'colors', 'items' => ['TextColor', 'BGColor']],
         ],
         'removePlugins' => 'elementspath',
-        'height' => 300
+        'height' => 300,
     ];
 
     /**
@@ -40,11 +55,21 @@ class CkAttribute extends HtmlAttribute
      */
     public function __construct($name, $flags = 0, $options = [])
     {
-        $this->ckOptions['language'] = Language::getLanguage();
-        $this->ckOptions['wsc_lang'] = $this->ckOptions['scayt_sLang'] = Tools::atktext('locale');
-        $this->ckOptions = array_merge($this->ckOptions, Config::getGlobal('ck_options'), $options);
-
         parent::__construct($name, $flags);
+
+        $this->ckOptions = $options;
+    }
+
+    public function init()
+    {
+        $locale = $this->getOwnerInstance()->getLanguage()->trans('locale');
+        $options = [
+            'language' => $this->getOwnerInstance()->getLanguage()::getLanguage(),
+            'wsc_lang' => $locale,
+            'scayt_sLang' => $locale,
+        ];
+
+        $this->ckOptions = array_merge(Config::getGlobal('ck_options'), $options, $this->ckOptions);
     }
 
     public function edit($record, $fieldprefix, $mode)

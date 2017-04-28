@@ -59,14 +59,13 @@ class ColumnConfig
      * @param Node $node
      * @param string $id
      * @param bool $forceNew force new instance?
+     * @param SessionManager $sessionManager
      *
      * @return ColumnConfig An instance of the columnconfig class
      */
-    public static function getConfig($node, $id = null, $forceNew = false)
+    public static function getConfig($node, $id = null, $forceNew = false, SessionManager $sessionManager)
     {
         static $s_instances = [];
-
-        $sm = SessionManager::getInstance();
 
         if ($id == null) {
             $id = $node->atkNodeUri();
@@ -77,15 +76,13 @@ class ColumnConfig
             $s_instances[$id] = $cc;
             $cc->setNode($node);
 
-            $colcfg = $sm != null ? $sm->pageVar('atkcolcfg_'.$id) : null;
+            $colcfg = $sessionManager != null ? $sessionManager->pageVar('atkcolcfg_'.$id) : null;
 
             if (!is_array($colcfg) || $forceNew) {
                 // create new
-                Tools::atkdebug('New colconfig initialising');
                 $cc->init();
             } else {
                 // inherit old config from session.
-                Tools::atkdebug('Resuming colconfig from session');
                 $cc->m_colcfg = &$colcfg;
             }
 
@@ -93,8 +90,8 @@ class ColumnConfig
             $cc->doUrlCommands();
         }
 
-        if ($sm != null) {
-            $sm->pageVar('atkcolcfg_'.$id, $s_instances[$id]->m_colcfg);
+        if ($sessionManager != null) {
+            $sessionManager->pageVar('atkcolcfg_'.$id, $s_instances[$id]->m_colcfg);
         }
 
         return $s_instances[$id];
@@ -428,8 +425,6 @@ class ColumnConfig
                 return $attrib;
             }
         }
-
-        return '';
     }
 
     /**

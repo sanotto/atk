@@ -2,14 +2,12 @@
 
 namespace Sintattica\Atk\Relations;
 
-use Sintattica\Atk\Ui\Page;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\DataGrid\DataGrid;
 use Sintattica\Atk\Db\Db;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Session\SessionStore;
-use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Db\Query;
 use Exception;
@@ -250,7 +248,7 @@ class OneToManyRelation extends Relation
         $this->createDestination();
 
         $grid = DataGrid::create($this->m_destInstance, str_replace('.', '_', $this->getOwnerInstance()->atkNodeUri()).'_'.$this->fieldName().'_grid', null,
-            true, $useSession);
+            true, $useSession, $this->getOwnerInstance()->getSessionManager());
 
         $grid->setMode($mode);
         $grid->setMasterNode($this->getOwnerInstance());
@@ -262,7 +260,7 @@ class OneToManyRelation extends Relation
             $grid->removeFlag(DataGrid::MULTI_RECORD_PRIORITY_ACTIONS);
         }
 
-        $grid->setBaseUrl(Tools::partial_url($this->getOwnerInstance()->atkNodeUri(), $action, 'attribute.'.$this->fieldName().'.grid'));
+        $grid->setBaseUrl($this->getOwnerInstance()->getSessionManager()->partial_url($this->getOwnerInstance()->atkNodeUri(), $action, 'attribute.'.$this->fieldName().'.grid'));
 
         $grid->setExcludes($this->getGridExcludes());
 
@@ -290,7 +288,7 @@ class OneToManyRelation extends Relation
             $grid = DataGrid::resume($node);
             $this->modifyDataGrid($grid, DataGrid::RESUME);
         } catch (Exception $e) {
-            $grid = DataGrid::create($node);
+            $grid = DataGrid::create($node, null, null, false, true, $this->getOwnerInstance()->getSessionManager());
             $this->modifyDataGrid($grid, DataGrid::CREATE);
         }
 
@@ -387,7 +385,7 @@ class OneToManyRelation extends Relation
 
     public function edit($record, $fieldprefix, $mode)
     {
-        $page = Page::getInstance();
+        $page = $this->getOwnerInstance()->getPage();
         $page->register_script(Config::getGlobal('assets_url').'javascript/onetomanyrelation.js');
 
         $grid = $this->createGrid($record, 'admin', $mode);
@@ -472,13 +470,13 @@ class OneToManyRelation extends Relation
     public function _getEmbeddedButtons()
     {
         $fname = $this->fieldName();
-        $output = '<input type="submit" class="btn btn-default otm_add" name="'.$fname.'_save" value="'.Tools::atktext('add').'">';
+        $output = '<input type="submit" class="btn btn-default otm_add" name="'.$fname.'_save" value="'.$this->getOwnerInstance()->getLanguage()->trans('add').'">';
 
         return $output.'<input type="button"
         onClick="ATK.OneToManyRelation.toggleAddForm(\''.$fname."_integrated','".$fname."_integrated_link');\"
         class=\"btn btn-default otm_add\"
         name=\"".$fname.'_cancel"
-        value="'.Tools::atktext('cancel').'">';
+        value="'.$this->getOwnerInstance()->getLanguage()->trans('cancel').'">';
     }
 
     /**
@@ -591,7 +589,7 @@ class OneToManyRelation extends Relation
         $add_url = $this->getAddURL($params);
         $label = $this->getAddLabel();
 
-        return Tools::href($add_url, $label, SessionManager::SESSION_NESTED, $saveform, $onchange.' class="atkonetomanyrelation btn btn-default"');
+        return $this->getOwnerInstance()->getSessionManager()->href($add_url, $label, SessionManager::SESSION_NESTED, $saveform, $onchange.' class="atkonetomanyrelation btn btn-default"');
     }
 
     /**
@@ -821,10 +819,9 @@ class OneToManyRelation extends Relation
      */
     public function delete($record)
     {
-        $atk = Atk::getInstance();
         $classname = $this->m_destination;
         $cache_id = $this->m_owner.'.'.$this->m_name;
-        $rel = $atk->atkGetNode($classname, true, $cache_id);
+        $rel = $this->getOwnerInstance()->getNodeManager()->getNode($classname, true, $cache_id);
         $ownerfields = $this->getOwnerFields();
 
         $whereelems = [];
@@ -1210,14 +1207,13 @@ class OneToManyRelation extends Relation
             // Get the destination node
             $classname = $this->m_destination;
             $cache_id = $this->m_owner.'.'.$this->m_name;
-            $atk = Atk::getInstance();
-            $rel = $atk->atkGetNode($classname, $cache_id);
+            $rel = $this->getOwnerInstance()->getNodeManager()->getNode($classname, $cache_id);
             // Get the current atkselector
             $where = $this->translateSelector($this->m_ownerInstance->m_postvars['atkselector']);
             if ($where) {
                 $childrecords = $rel->select($where)->getAllRows();
                 if (!empty($childrecords)) {
-                    return Tools::atktext('restricted_delete_error');
+                    return $this->getOwnerInstance()->getLanguage()->trans('restricted_delete_error');
                 }
             } else {
                 return false;

@@ -3,7 +3,6 @@
 namespace Sintattica\Atk\Cache;
 
 use Sintattica\Atk\Core\Config;
-use Sintattica\Atk\Core\Tools;
 use ArrayAccess;
 use Exception;
 
@@ -85,8 +84,6 @@ abstract class Cache implements ArrayAccess
         foreach ($types as $type) {
             try {
                 if (!$force && array_key_exists($type, self::$m_instances) && is_object(self::$m_instances[$type])) {
-                    Tools::atkdebug("cache::getInstance -> Using cached instance of $type");
-
                     return self::$m_instances[$type];
                 } else {
 
@@ -95,12 +92,10 @@ abstract class Cache implements ArrayAccess
                     self::$m_instances[$type]->setLifetime(self::$m_instances[$type]->getCacheConfig('lifetime', 3600));
                     self::$m_instances[$type]->setActive(Config::getGlobal('cache_active', true));
 
-                    Tools::atkdebug("cache::getInstance() -> Using $type cache");
-
                     return self::$m_instances[$type];
                 }
             } catch (Exception $e) {
-                Tools::atknotice("Can't instantatie atkCache class $type: ".$e->getMessage());
+                // Can't instantiate atkCache class $type: ".$e->getMessage());
             }
         }
 
@@ -109,8 +104,6 @@ abstract class Cache implements ArrayAccess
         }
 
         // Default return var cache
-        Tools::atkdebug('cache::getInstance() -> Using var cache');
-
         return self::getInstance('var', false, $force);
     }
 
@@ -200,7 +193,7 @@ abstract class Cache implements ArrayAccess
      *
      * @param string $key Entry Id
      * @param mixed $data The data we want to add
-     * @param int $lifetime give a specific lifetime for this cache entry. When $lifetime is false the default lifetime is used.
+     * @param mixed $lifetime give a specific lifetime for this cache entry. When $lifetime is false the default lifetime is used.
      *
      * @return bool True on success, false on failure.
      */
@@ -212,7 +205,7 @@ abstract class Cache implements ArrayAccess
      *
      * @param string $key Entry ID
      * @param mixed $data The data we want to set
-     * @param int $lifetime give a specific lifetime for this cache entry. When $lifetime is false the default lifetime is used.
+     * @param mixed $lifetime give a specific lifetime for this cache entry. When $lifetime is false the default lifetime is used.
      *
      * @return true on success, false on failure.
      */

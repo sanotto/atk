@@ -2,6 +2,7 @@
 
 namespace Sintattica\Atk\Ui;
 
+use Sintattica\Atk\Core\Language;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Atk;
@@ -12,11 +13,6 @@ use Sintattica\Atk\Session\SessionManager;
  *
  * This class is used to render output as an html page. It takes care of
  * creating a header, loading javascripts and loading stylesheets.
- * Since any script will output exactly one page to the browser, this is
- * a singleton. Use getInstance() to retrieve the one-and-only instance.
- *
- * @todo This should actually not be a singleton. HTML file generation¬
- *       scripts may need an instance per page generated.
  *
  * @author Ivo Jansch <ivo@achievo.org>
  */
@@ -104,6 +100,11 @@ class Page
      */
     protected $m_title = '';
 
+    protected $ui;
+    protected $language;
+
+    protected static $s_page = null;
+
     /**
      * Retrieve the one-and-only Page instance.
      *
@@ -111,20 +112,18 @@ class Page
      */
     public static function getInstance()
     {
-        static $s_page = null;
-        if ($s_page == null) {
-            $s_page = new self();
-            Tools::atkdebug('Created a new Page instance');
-        }
-
-        return $s_page;
+        return self::$s_page;
     }
 
     /**
      * Constructor.
+     * @param Ui $ui
      */
-    public function __construct()
+    public function __construct(Ui $ui, Language $language)
     {
+        $this->ui = $ui;
+        $this->language = $language;
+
         // register default scripts
         $assetsUrl = Config::getGlobal('assets_url');
 
@@ -140,6 +139,13 @@ class Page
         if($style_url){
             $this->register_style(Config::getGlobal('style_url'));
         }
+
+        self::$s_page = $this;
+    }
+
+    public function getUi()
+    {
+        return $this->ui;
     }
 
     /**
@@ -613,10 +619,8 @@ class Page
     public function render($title = null, $flags = self::HTML_STRICT, $extrabodyprops = '', $extra_header = '')
     {
         if ($title == null) {
-            $title = $this->m_title != '' ? $this->m_title : Tools::atktext('app_title');
+            $title = $this->m_title != '' ? $this->m_title : $this->language->trans('app_title');
         }
-
-        $ui = Ui::getInstance();
 
         if (is_bool($flags) && $flags == true) {
             $flags = self::HTML_STRICT;
@@ -626,7 +630,7 @@ class Page
             return $this->renderPartial();
         }
 
-        $this->m_content = $ui->render('page.tpl', array('content' => $this->m_content));
+        $this->m_content = $this->ui->render('page.tpl', array('content' => $this->m_content));
 
         $layout = [];
         $layout['title'] = $title;
@@ -641,7 +645,7 @@ class Page
         $layout['hiddenvars'] = $this->hiddenVars();
         $layout['atkversion'] = Atk::VERSION;
 
-        return $ui->render('layout.tpl', $layout);
+        return $this->ui->render('layout.tpl', $layout);
     }
 
     /**

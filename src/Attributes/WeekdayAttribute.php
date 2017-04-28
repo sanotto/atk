@@ -90,7 +90,7 @@ class WeekdayAttribute extends NumberAttribute
             $day = pow(2, $i - 1);
 
             if ($i <= 7) {
-                $weekday = Tools::atktext($this->m_mapping[$day]);
+                $weekday = $this->getOwnerInstance()->getLanguage()->trans($this->m_mapping[$day]);
             } else {
                 $weekday = $this->m_extra[$i - 8];
             }
@@ -138,7 +138,7 @@ class WeekdayAttribute extends NumberAttribute
                     if ($mode == 'list') {
                         $weekday = substr($weekday, 0, 3);
                     }
-                    $weekday = Tools::atktext($weekday);
+                    $weekday = $this->getOwnerInstance()->getLanguage()->trans($weekday);
                 } else {
                     $weekday = $this->m_extra[$i - 8];
                 }
@@ -148,7 +148,7 @@ class WeekdayAttribute extends NumberAttribute
         }
 
         if (empty($result)) {
-            return Tools::atktext('none');
+            return $this->getOwnerInstance()->getLanguage()->trans('none');
         } else {
             return $result;
         }

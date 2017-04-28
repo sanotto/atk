@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Security;
 
 use Sintattica\Atk\Attributes\Attribute;
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Db\Db;
@@ -40,53 +41,73 @@ class SecurityManager
      * @var array $system_users are special system users.
      * Can be enabled adding an atk config password value (administratorpassword / guestpassword)
      */
-    protected $system_users = [
+    protected static $system_users = [
         ['name' => 'administrator', 'level' => -1, 'access_level' => 9999999],
         ['name' => 'guest', 'level' => -2, 'access_level' => 0],
     ];
 
+    protected $page;
+    protected $ui;
+    protected $output;
+    protected $debugger;
+    protected $db;
+
+    /** @var  SessionManager $sessionManager */
+    protected $sessionManager;
+
+    static $s_instance = null;
+
     /**
      * Constructor.
      *
+     * @param Page $page
+     * @param Ui $ui
+     * @param Output $output
+     * @param Debugger $debugger
+     * @param Db $db
      * @param string $authentication_type The type of authentication (user/password verification) to use
      * @param string $authorization_type The type of authorization (mostly the same as the authentication_type)
      * @param string $securityscheme The security scheme that will be used to determine who is allowed to do what
      */
-    public function __construct($authentication_type = 'none', $authorization_type = 'none', $securityscheme = 'none')
+    public function __construct(Page $page, Ui $ui, Output $output, Debugger $debugger, Db $db, $authentication_type = 'none', $authorization_type = 'none', $securityscheme = 'none')
     {
-        Tools::atkdebug("creating securityManager (authenticationtype: $authentication_type, authorizationtype: $authorization_type, scheme: $securityscheme)");
+        $this->page = $page;
+        $this->ui = $ui;
+        $this->output = $output;
+        $this->debugger = $debugger;
+        $this->db = $db;
+
+        $this->debugger->addDebug("creating securityManager (authenticationtype: $authentication_type, authorizationtype: $authorization_type, scheme: $securityscheme)");
 
         $authentication = $this->_getAuthTypes($authentication_type);
         foreach ($authentication as $class) {
             if (!class_exists($class)) {
-                Tools::atkdebug("atkSecurityManager() unsupported authentication type or type no found for $class");
+                $this->debugger->addDebug("atkSecurityManager() unsupported authentication type or type no found for $class");
             } else {
-                $this->m_authentication[$class] = new $class();
+                $this->m_authentication[$class] = new $class($this, $this->db);
             }
         }
 
         /* authorization class */
         $clsname = $this->_getclassname($authorization_type);
-        $this->m_authorization = new $clsname();
+        $this->m_authorization = new $clsname($this, $this->db);
 
         /* security scheme */
         $this->m_scheme = $securityscheme;
 
         $this->auth_response = self::AUTH_UNVERIFIED;
+
+        self::$s_instance = $this;
+    }
+
+    public function setSessionManager(SessionManager $sessionManager)
+    {
+        $this->sessionManager = $sessionManager;
     }
 
     public static function getInstance()
     {
-        static $s_instance = null;
-        if ($s_instance == null) {
-            Tools::atkdebug('Created a new SecurityManager instance');
-            $authentication = Config::getGlobal('authentication', 'none');
-            $authorization = Config::getGlobal('authorization', $authentication);
-            $scheme = Config::getGlobal('securityscheme', 'none');
-            $s_instance = new self($authentication, $authorization, $scheme);
-        }
-
-        return $s_instance;
+        return self::$s_instance;
     }
 
     /**
@@ -94,12 +115,10 @@ class SecurityManager
      */
     public function run()
     {
-        global $ATK_VARS;
-
         $isCli = php_sapi_name() === 'cli';
 
         // Logout?
-        if (isset($ATK_VARS['atklogout'])) {
+        if (isset(Atk::$ATK_VARS['atklogout'])) {
             $this->logout();
             if (!$isCli) {
                 header('Location: '.Config::getGlobal('dispatcher'));
@@ -108,13 +127,13 @@ class SecurityManager
         }
 
         // Get some vars
-        $session = &SessionManager::getSession();
-        $auth_rememberme = isset($ATK_VARS['auth_rememberme']) ? $ATK_VARS['auth_rememberme'] : 0;
+        $session = &$this->sessionManager->getSession();
+        $auth_rememberme = isset(Atk::$ATK_VARS['auth_rememberme']) ? Atk::$ATK_VARS['auth_rememberme'] : 0;
 
         if (Config::getGlobal('auth_loginform') == true) {
             // form login
-            $auth_user = isset($ATK_VARS['auth_user']) ? $ATK_VARS['auth_user'] : '';
-            $auth_pw = isset($ATK_VARS['auth_pw']) ? $ATK_VARS['auth_pw'] : '';
+            $auth_user = isset(Atk::$ATK_VARS['auth_user']) ? Atk::$ATK_VARS['auth_user'] : '';
+            $auth_pw = isset(Atk::$ATK_VARS['auth_pw']) ? Atk::$ATK_VARS['auth_pw'] : '';
         } else {
             // HTTP login
             $auth_user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : '';
@@ -132,8 +151,8 @@ class SecurityManager
         }
 
         // u2fauth verification?
-        if (Config::getGlobal('auth_enable_u2f') && $this->auth_response === self::AUTH_UNVERIFIED && isset($ATK_VARS['u2f_response'])) {
-            $this->u2fAuthenticate($auth_user, $ATK_VARS['u2f_response']);
+        if (Config::getGlobal('auth_enable_u2f') && $this->auth_response === self::AUTH_UNVERIFIED && isset(Atk::$ATK_VARS['u2f_response'])) {
+            $this->u2fAuthenticate($auth_user, Atk::$ATK_VARS['u2f_response']);
         }
 
         // try a standard login with user / password
@@ -165,11 +184,10 @@ class SecurityManager
                     $location .= (strpos($location, '?') === false) ? '?' : '&';
                     $location .= 'login='.$auth_user.'&error='.$this->auth_response;
 
-                    if (Config::getGlobal('debug') >= 2) {
-                        $debugger = Debugger::getInstance();
-                        $debugger->setRedirectUrl($location);
-                        Tools::atkdebug('Non-debug version would have redirected to <a href="'.$location.'">'.$location.'</a>');
-                        $output = Output::getInstance();
+                    if ($this->debugger->getDebugLevel() >= 2) {
+                        $this->debugger->setRedirectUrl($location);
+                        $this->debugger->addDebug('Non-debug version would have redirected to <a href="'.$location.'">'.$location.'</a>');
+                        $output = $this->output;
                         $output->outputFlush();
                     } else {
                         header('Location: '.$location);
@@ -326,18 +344,18 @@ class SecurityManager
         }
 
         $this->m_user = null;
-        SessionManager::getInstance()->destroy();
+        $this->sessionManager->destroy();
 
         $this->notifyListeners('postLogout', $username);
     }
 
     protected function sessionLogin()
     {
-        $sessionManager = SessionManager::getInstance();
-        $session_auth = $sessionManager->getValue('authentication', 'globals');
+
+        $session_auth = $this->sessionManager->getValue('authentication', 'globals');
         if (Config::getGlobal('authentication_session') && $session_auth['authenticated'] == 1 && !empty($session_auth['user'])) {
             $this->m_user = &$session_auth['user'];
-            Tools::atkdebug('SecurityManager: Using session for authentication / user = '.$this->m_user['name']);
+            $this->debugger->addDebug('SecurityManager: Using session for authentication / user = '.$this->m_user['name']);
             $this->auth_response = self::AUTH_SUCCESS;
         }
     }
@@ -395,9 +413,7 @@ class SecurityManager
         $isCli = php_sapi_name() === 'cli';
 
         $this->m_user = $user;
-        $GLOBALS['g_user'] = &$user;
-        $sm = SessionManager::getInstance();
-        $sm->globalVar('authentication', ['authenticated' => 1, 'user' => $user], true);
+        $this->sessionManager->globalVar('authentication', ['authenticated' => 1, 'user' => $user], true);
         if (!$isCli) {
             header('user: '.$user['name']);
         }
@@ -405,7 +421,7 @@ class SecurityManager
 
     protected function storeAuth($auth_user, $auth_name)
     {
-        Tools::atkdebug("SecurityManager: Using $auth_name for authentication / user = $auth_user");
+        $this->debugger->addDebug("SecurityManager: Using $auth_name for authentication / user = $auth_user");
 
         if ($system_user = $this->getSystemUser($auth_user)) {
             $this->m_user = $system_user;
@@ -415,7 +431,7 @@ class SecurityManager
 
         $this->m_user['AUTH'] = $auth_name; // something to see which auth scheme is used
         (is_array($this->m_user['level'])) ? $dbg = implode(',', $this->m_user['level']) : $dbg = $this->m_user['level'];
-        Tools::atkdebug('Logged in user: '.$this->m_user['name'].' (level: '.$dbg.')');
+        $this->debugger->addDebug('Logged in user: '.$this->m_user['name'].' (level: '.$dbg.')');
     }
 
     /**
@@ -428,12 +444,11 @@ class SecurityManager
      */
     public function reloadUser()
     {
-        $sessionManager = SessionManager::getInstance();
         $user = self::atkGetUser();
         $this->m_user = $this->m_authorization->getUser($user[Config::getGlobal('auth_userfield')]);
-        $old_auth = $sessionManager->getValue('authentication', 'globals');
+        $old_auth = $this->sessionManager->getValue('authentication', 'globals');
         $old_auth['user'] = $this->m_user;
-        $sessionManager->globalVar('authentication', $old_auth, true);
+        $this->sessionManager->globalVar('authentication', $old_auth, true);
     }
 
     /**
@@ -444,8 +459,8 @@ class SecurityManager
      */
     public function loginForm($defaultname, $error = '')
     {
-        $page = Page::getInstance();
-        $ui = Ui::getInstance();
+        $page = $this->page;
+        $ui = $this->ui;
 
         $tplvars = [];
         $tplvars['atksessionformvars'] = Tools::makeHiddenPostvars(['atklogout', 'auth_rememberme', 'u2f_response']);
@@ -462,13 +477,13 @@ class SecurityManager
 
         if (Config::getGlobal('auth_enable_rememberme')) {
             $tplvars['auth_enable_rememberme'] = true;
-            if (isset($_POST['auth_rememberme']) && $_POST['auth_rememberme'] == '1') {
+            if (isset(Atk::$ATK_VARS['p']['auth_rememberme']) && Atk::$ATK_VARS['p']['auth_rememberme'] == '1') {
                 $tplvars['auth_rememberme'] = true;
             }
         }
 
         $page->addContent($ui->render('login.tpl', $tplvars));
-        $output = Output::getInstance();
+        $output = $this->output;
         $output->output($page->render(Tools::atktext('app_title'), Page::HTML_STRICT, '', $ui->render('login_meta.tpl')));
         $output->outputFlush();
         exit;
@@ -476,7 +491,7 @@ class SecurityManager
 
     public function getSystemUser($username)
     {
-        foreach ($this->system_users as $user) {
+        foreach (self::$system_users as $user) {
             if ($user['name'] === $username) {
                 return $user;
             }
@@ -577,7 +592,7 @@ class SecurityManager
                 @fwrite($fp, $logstamp.$message."\n");
                 @fclose($fp);
             } else {
-                Tools::atkdebug('error opening logfile');
+                $this->debugger->addDebug('error opening logfile');
             }
         }
     }
@@ -592,8 +607,8 @@ class SecurityManager
     public static function atkGetUser($key = '')
     {
         $user = null;
-        $sm = SessionManager::getInstance();
-        $session_auth = is_object($sm) ? $sm->getValue('authentication', 'globals') : [];
+
+        $session_auth = is_object(self::$s_instance->sessionManager) ? self::$s_instance->sessionManager->getValue('authentication', 'globals') : [];
         if (Config::getGlobal('authentication_session') && $session_auth['authenticated'] == 1 && !empty($session_auth['user'])
         ) {
             $user = $session_auth['user'];
@@ -656,14 +671,15 @@ class SecurityManager
         $remember_user = $this->rememberMeVerifyCookie();
 
         if ($remember_user) {
-            $session = &SessionManager::getSession();
+            $session = &$this->sessionManager->getSession();
             $this->notifyListeners('preLogin', $remember_user);
             $session['remembermeTokenId'] = $this->rememberMeStore($remember_user);
             $isValid = $this->m_authorization->isValidUser($remember_user);
+
             if ($isValid) {
                 $this->storeAuth($remember_user, 'rememberme');
                 $this->auth_response = self::AUTH_SUCCESS;
-                Tools::atkdebug('Using rememberme for authentication / user = '.$remember_user);
+                $this->debugger->addDebug('Using rememberme for authentication / user = '.$remember_user);
             }
         }
     }
@@ -679,7 +695,6 @@ class SecurityManager
      */
     private function rememberMeStore($username)
     {
-        $db = Db::getInstance();
         $dbTable = Config::getGlobal('auth_rememberme_dbtable');
 
         $expires = new \DateTime(Config::getGlobal('auth_rememberme_expireinterval'));
@@ -690,12 +705,12 @@ class SecurityManager
         $userfield = Config::getGlobal('auth_userfield');
         $sql = "INSERT INTO `".$dbTable."` (selector, token, `$userfield`, expires, created) VALUES (?, ?, ?, ?, NOW())";
 
-        $stmt = $db->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$selector, hash('sha256', $authenticator), $username, $expires->format('Y-m-d H:i:s')]);
-        $db->commit();
+        $this->db->commit();
 
         //get the current tokenId
-        $tokenId = $db->getValue("SELECT id FROM `".$dbTable."` WHERE selector = '".$db->escapeSQL($selector)."'");
+        $tokenId = $this->db->getValue("SELECT id FROM `".$dbTable."` WHERE selector = '".$this->db->escapeSQL($selector)."'");
 
         //create the cookie
         $tokenValue = $selector.':'.base64_encode($authenticator);
@@ -729,9 +744,8 @@ class SecurityManager
 
         list($selector, $authenticator) = explode(':', $remember);
 
-        $db = Db::getInstance();
-        $sql = "SELECT * FROM `$dbTable` WHERE selector = '".$db->escapeSQL($selector)."'";
-        $row = $db->getRow($sql);
+        $sql = "SELECT * FROM `$dbTable` WHERE selector = '".$this->db->escapeSQL($selector)."'";
+        $row = $this->db->getRow($sql);
 
         //token found?
         if (!$row) {
@@ -765,18 +779,17 @@ class SecurityManager
 
     private function rememberMeDeleteToken($id)
     {
-        $db = Db::getInstance();
         $dbTable = Config::getGlobal('auth_rememberme_dbtable');
         $sql = "DELETE FROM `$dbTable` WHERE id = ?";
-        $stmt = $db->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$id]);
-        $db->commit();
+        $this->db->commit();
     }
 
     private function rememberMeDestroy()
     {
         $this->rememberMeClearCookie();
-        $session = &SessionManager::getSession();
+        $session = &$this->sessionManager->getSession();
         if (isset($session['remembermeTokenId'])) {
             $this->rememberMeDeleteToken($session['remembermeTokenId']);
         }
@@ -803,9 +816,7 @@ class SecurityManager
     {
         $table = Config::getGlobal('auth_u2f_dbtable');
         $userfk = Config::getGlobal('auth_userfk');
-
-        $db = Db::getInstance();
-        $sel = $db->prepare("select * from `$table` where `$userfk` = ?");
+        $sel = $this->db->prepare("select * from `$table` where `$userfk` = ?");
         $sel->execute([$user_id]);
         $res = [];
         while ($r = $sel->fetch()) {
@@ -818,15 +829,14 @@ class SecurityManager
     private function u2fUpdateRegistration($reg)
     {
         $table = Config::getGlobal('auth_u2f_dbtable');
-        $db = Db::getInstance();
-        $upd = $db->prepare("UPDATE `$table` set counter = ? where id = ?");
+        $upd = $this->db->prepare("UPDATE `$table` set counter = ? where id = ?");
         $upd->execute([$reg->counter, $reg->id]);
-        $db->commit();
+        $this->db->commit();
     }
 
     private function u2fAuthenticate($auth_user, $u2f_response)
     {
-        $session = &SessionManager::getSession();
+        $session = &$this->sessionManager->getSession();
 
         try {
             $requests = isset($session['u2f_authReq']) ? $session['u2f_authReq'] : '[]';
@@ -859,9 +869,9 @@ class SecurityManager
 
     private function u2fAuthenticationForm($auth_user, $auth_rememberme)
     {
-        $session = &SessionManager::getSession();
-        $page = Page::getInstance();
-        $ui = Ui::getInstance();
+        $session = &$this->sessionManager->getSession();
+        $page = $this->page;
+        $ui = $this->ui;
         $user = $this->m_authorization->getUser($auth_user);
         $user_id = $user[Config::getGlobal('auth_userpk')];
         $u2f = $this->getU2F();
@@ -876,7 +886,7 @@ class SecurityManager
         $tplvars['auth_rememberme'] = $auth_rememberme;
 
         $result = $ui->render('u2f.tpl', $tplvars);
-        $output = Output::getInstance();
+        $output = $this->output;
         $page->register_script(Config::getGlobal('assets_url').'javascript/u2f-api.js');
         $page->addContent($result);
         $output->output($page->render(Tools::atktext('app_title')));

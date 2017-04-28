@@ -2,7 +2,6 @@
 
 namespace Sintattica\Atk\Attributes;
 
-use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Db\Db;
@@ -148,7 +147,7 @@ class ProfileAttribute extends Attribute
         $privilege_setting = Config::getGlobal('auth_grantall_privilege');
 
         if ($privilege_setting != '') {
-            $securityManager = SecurityManager::getInstance();
+            $securityManager = $this->getOwnerInstance()->getSecurityManager();
 
             list($mod, $node, $priv) = explode('.', $privilege_setting);
 
@@ -168,8 +167,6 @@ class ProfileAttribute extends Attribute
      */
     public function getAllActions($record, $splitPerSection = false)
     {
-        $atk = Atk::getInstance();
-
         $result = [];
 
         // hierarchic groups, only return actions of parent (if this record has a parent)
@@ -184,26 +181,16 @@ class ProfileAttribute extends Attribute
                 $node = Tools::getNodeType($row['node']);
                 $result[$module][$module][$node][] = $row['action'];
             }
-        } // non-hierarchic groups, or root
-        else {
-
-            // get nodes for each module
-            foreach (array_keys($atk->g_modules) as $module) {
-                $instance = $atk->atkGetModule($module);
-                if (method_exists($instance, 'getNodes')) {
-                    $instance->getNodes();
-                }
-            }
-
-            // retrieve all actions after we registered all actions
-            $result = $atk->g_nodes;
+        } else {
+            // non-hierarchic groups, or root
+            $result = $this->getOwnerInstance()->getNodeManager()->getNodes();
         }
 
         if (!$splitPerSection) {
             $temp = [];
             foreach ($result as $section => $modules) {
                 foreach ($modules as $module => $nodes) {
-                    if (!is_array($temp[$module])) {
+                    if (!array_key_exists($module, $temp)) {
                         $temp[$module] = [];
                     }
 
@@ -333,7 +320,7 @@ class ProfileAttribute extends Attribute
      */
     public function display($record, $mode)
     {
-        $page = Page::getInstance();
+        $page = $this->getOwnerInstance()->getPage();
         $page->register_script(Config::getGlobal('assets_url').'javascript/profileattribute.js');
         $this->_restoreDivStates($page);
 
@@ -381,7 +368,7 @@ class ProfileAttribute extends Attribute
                 }
 
                 if ($showBox) {
-                    $node_result .= '<b>'.Tools::atktext($node, $module).'</b><br>';
+                    $node_result .= '<b>'.$this->getOwnerInstance()->getLanguage()->trans($node, $module).'</b><br>';
                     $node_result .= $permissions_string;
                     if ($display_tabs_str) {
                         $node_result .= '<br>Tabs:&nbsp;'.$tab_permissions_string;
@@ -410,7 +397,7 @@ class ProfileAttribute extends Attribute
 
                     $result .= sprintf("<span onclick=\"%s\" style=\"cursor: pointer; font-size: 110%%; font-weight: bold;display:block;\"><i class=\"%s\" id=\"img_div_$module\"></i> %s</span>",
                         "ATK.ProfileAttribute.profile_swapProfileDiv('div_$module'); return false;", Config::getGlobal('icon_plussquare'),
-                        Tools::atktext(array("title_$module", $module), $module));
+                        $this->getOwnerInstance()->getLanguage()->trans(array("title_$module", $module), $module));
                     $result .= "<div id=\"div_$module\" name=\"div_$module\" style=\"display: none;padding-left: 15px;\">";
                     $result .= "<input type=\"hidden\" name=\"divstate['div_$module']\" id=\"divstate['div_$module']\" value=\"closed\" />";
                     $result .= $module_result;
@@ -488,7 +475,7 @@ class ProfileAttribute extends Attribute
         );
 
         // don't use text() function of attribute, because of auto module detection
-        $label = Tools::atktext($keys, $modulename, $nodename);
+        $label = $this->getOwnerInstance()->getLanguage()->trans($keys, $modulename, $nodename);
 
         return $label;
     }
@@ -506,7 +493,7 @@ class ProfileAttribute extends Attribute
      */
     public function edit($record, $fieldprefix, $mode)
     {
-        $page = Page::getInstance();
+        $page = $this->getOwnerInstance()->getPage();
 
         $icons = "var ATK_PROFILE_ICON_OPEN = '".Config::getGlobal('icon_plussquare')."';";
         $icons .= "var ATK_PROFILE_ICON_CLOSE = '".Config::getGlobal('icon_minussquare')."';";
@@ -516,7 +503,7 @@ class ProfileAttribute extends Attribute
         $this->_restoreDivStates($page);
 
         $result = '<div align="right">
-                  [<a href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkAll(\''.$this->fieldName().'\'); return false;">'.Tools::atktext('check_all').'</a> | <a href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkNone(\''.$this->fieldName().'\'); return false;">'.Tools::atktext('check_none').'</a> | <a href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkInvert(\''.$this->fieldName().'\'); return false;">'.Tools::atktext('invert_selection').'</a>]</div>';
+                  [<a href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkAll(\''.$this->fieldName().'\'); return false;">'.$this->getOwnerInstance()->getLanguage()->trans('check_all').'</a> | <a href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkNone(\''.$this->fieldName().'\'); return false;">'.$this->getOwnerInstance()->getLanguage()->trans('check_none').'</a> | <a href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkInvert(\''.$this->fieldName().'\'); return false;">'.$this->getOwnerInstance()->getLanguage()->trans('invert_selection').'</a>]</div>';
 
         $isAdmin = (SecurityManager::isUserAdmin() || $this->canGrantAll());
         $allActions = $this->getAllActions($record, true);
@@ -527,7 +514,7 @@ class ProfileAttribute extends Attribute
             $result .= '<div class="profileSection">';
 
             $result .= "<span onclick=\"ATK.ProfileAttribute.profile_swapProfileDiv('div_$section');\" style=\"cursor: pointer; font-size: 110%; font-weight: bold\">";
-            $result .= '  <i class="'.Config::getGlobal('icon_plussquare')."\" id=\"img_div_$section\"></i> ".Tools::atktext(array("title_$section", $section),
+            $result .= '  <i class="'.Config::getGlobal('icon_plussquare')."\" id=\"img_div_$section\"></i> ".$this->getOwnerInstance()->getLanguage()->trans(array("title_$section", $section),
                     $section);
             $result .= '</span><br/>';
 
@@ -536,9 +523,9 @@ class ProfileAttribute extends Attribute
             $result .= "  <input type='hidden' name=\"divstate['div_$section']\" id=\"divstate['div_$section']\" value='closed' />";
 
             $result .= '  <div style="font-size: 80%; margin-top: 4px; margin-bottom: 4px" >
-                  [<a  style="font-size: 100%" href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkAllByValue(\''.$this->fieldName().'\',\''.$section.'.\'); return false;">'.Tools::atktext('check_all',
-                    'atk').'</a> | <a  style="font-size: 100%" href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkNoneByValue(\''.$this->fieldName().'\',\''.$section.'.\'); return false;">'.Tools::atktext('check_none',
-                    'atk').'</a> | <a  style="font-size: 100%" href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkInvertByValue(\''.$this->fieldName().'\',\''.$section.'.\'); return false;">'.Tools::atktext('invert_selection',
+                  [<a  style="font-size: 100%" href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkAllByValue(\''.$this->fieldName().'\',\''.$section.'.\'); return false;">'.$this->getOwnerInstance()->getLanguage()->trans('check_all',
+                    'atk').'</a> | <a  style="font-size: 100%" href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkNoneByValue(\''.$this->fieldName().'\',\''.$section.'.\'); return false;">'.$this->getOwnerInstance()->getLanguage()->trans('check_none',
+                    'atk').'</a> | <a  style="font-size: 100%" href="javascript:void(0)" onclick="ATK.ProfileAttribute.profile_checkInvertByValue(\''.$this->fieldName().'\',\''.$section.'.\'); return false;">'.$this->getOwnerInstance()->getLanguage()->trans('invert_selection',
                     'atk').'</a>]';
             $result .= '  </div>';
             $result .= '  <br>';
@@ -549,7 +536,7 @@ class ProfileAttribute extends Attribute
                             (is_array($editableActions[$module][$node]) ? $editableActions[$module][$node] : array()))) > 0;
 
                     if ($showBox) {
-                        $result .= '<b>'.Tools::atktext($node, $module).'</b><br>';
+                        $result .= '<b>'.$this->getOwnerInstance()->getLanguage()->trans($node, $module).'</b><br>';
                     }
 
                     $tabs_str = '';
@@ -631,7 +618,7 @@ class ProfileAttribute extends Attribute
                     $action = $elems[2];
                 } else {
                     // never happens..
-                    Tools::atkdebug('profileattribute encountered incomplete combination');
+                    $this->getOwnerInstance()->getDebugger()->addDebug('profileattribute encountered incomplete combination');
                 }
             }
             if ($node && $action) {

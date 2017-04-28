@@ -36,9 +36,6 @@ class MailErrorHandler extends ErrorHandlerBase
         $txt_app_title = Tools::atktext('app_title');
 
         if ($this->params['mailto'] != '') { // only if enabled..
-
-            $atk = Atk::getInstance();
-
             $subject = '['.$_SERVER['SERVER_NAME']."] $txt_app_title error";
 
             $defaultfrom = sprintf('%s <%s@%s>', $txt_app_title, Config::getGlobal('identifier', 'atk'), $_SERVER['SERVER_NAME']);
@@ -57,26 +54,24 @@ class MailErrorHandler extends ErrorHandlerBase
             }
             $body .= implode("\n", $lines);
 
-            if (is_array($_GET)) {
+            if (is_array(Atk::$ATK_VARS['g'])) {
                 $body .= "\n\n_GET\n".str_repeat('-', 70)."\n";
-                foreach ($_GET as $key => $value) {
+                foreach (Atk::$ATK_VARS['g'] as $key => $value) {
                     $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 20 - strlen($key))).' = '.var_export($value, 1))."\n";
                 }
             }
 
-            if (function_exists('getallheaders')) {
-                $request = getallheaders();
-                if (count($request) > 0) {
-                    $body .= "\n\nREQUEST INFORMATION\n".str_repeat('-', 70)."\n";
-                    foreach ($request as $key => $value) {
-                        $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 30 - strlen($key))).' = '.var_export($value, 1))."\n";
-                    }
+            $request = getallheaders();
+            if (count($request) > 0) {
+                $body .= "\n\nREQUEST INFORMATION\n".str_repeat('-', 70)."\n";
+                foreach ($request as $key => $value) {
+                    $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 30 - strlen($key))).' = '.var_export($value, 1))."\n";
                 }
             }
 
-            if (is_array($_POST)) {
+            if (is_array(Atk::$ATK_VARS['p'])) {
                 $body .= "\n\n_POST\n".str_repeat('-', 70)."\n";
-                foreach ($_POST as $key => $value) {
+                foreach (Atk::$ATK_VARS['p'] as $key => $value) {
                     $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 20 - strlen($key))).' = '.var_export($value, 1))."\n";
                 }
             }
@@ -88,18 +83,14 @@ class MailErrorHandler extends ErrorHandlerBase
                 }
             }
 
-            $body .= "\n\nATK CONFIGURATION\n".str_repeat('-', 70)."\n";
-            foreach ($GLOBALS as $key => $value) {
-                if (substr($key, 0, 7) == 'config_') {
-                    $body .= $this->_wordwrap($key.str_repeat(' ', max(1, 30 - strlen($key))).' = '.var_export($value, 1))."\n";
-                }
-            }
-
+            //TODO: module condfig
+            /*
             $body .= "\n\nMODULE CONFIGURATION\n".str_repeat('-', 70)."\n";
-            foreach ($atk->g_modules as $modname => $modpath) {
+            foreach (???->atkGetModules() as $modname => $modpath) {
                 $modexists = file_exists($modpath) ? ' (path exists)' : ' (PATH DOES NOT EXIST!)';
                 $body .= $this->_wordwrap($modname.':'.str_repeat(' ', max(1, 20 - strlen($modname))).var_export($modpath, 1).$modexists)."\n";
             }
+            */
 
             $body .= "\n\nCurrent User:\n".str_repeat('-', 70)."\n";
             $user = SecurityManager::atkGetUser();

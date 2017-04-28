@@ -2,8 +2,6 @@
 
 namespace Sintattica\Atk\Attributes;
 
-use Sintattica\Atk\Ui\Page;
-
 /**
  * The LiveTextPreview adds a preview to the page that previews realtime
  * the content of any Attribute or atkTextAttribute while it is being
@@ -39,7 +37,7 @@ class LiveTextPreviewAttribute extends DummyAttribute
 
     public function edit($record, $fieldprefix, $mode)
     {
-        $page = Page::getInstance();
+        $page = $this->getOwnerInstance()->getPage();
         $id = $this->getHtmlId($fieldprefix);
         $master = $fieldprefix.$this->m_masterattribute;
         $page->register_scriptcode("function {$id}_ReloadTextDiv()

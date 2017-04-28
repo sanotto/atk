@@ -19,10 +19,11 @@ class PgSqlDb extends Db
 
     /**
      * Base constructor.
+     * @param Debugger $debugger
      */
-    public function __construct()
+    public function __construct(Debugger $debugger)
     {
-        /* do nothing */
+        parent::__construct($debugger);
 
         // force case insensitive searching and ordering
         $this->m_force_ci = true;
@@ -53,7 +54,7 @@ class PgSqlDb extends Db
             }
 
             if (!empty($charset)) {
-                Tools::atkdebug("Set database character set to: {$charset}");
+                $this->debugger->addDebug("Set database character set to: {$charset}");
                 $conn[] = "options='--client_encoding=$charset'";
             }
 
@@ -104,7 +105,7 @@ class PgSqlDb extends Db
     protected function _query($query, $isSystemQuery)
     {
         if (Config::getGlobal('debug') >= 0) {
-            Debugger::addQuery($query, $isSystemQuery);
+            $this->debugger->addQuery($query, $isSystemQuery);
         }
 
         return @pg_query($this->m_link_id, $query);
@@ -456,7 +457,7 @@ class PgSqlDb extends Db
         if ($offset >= 0 && $limit >= 0) {
             $query .= " LIMIT $limit OFFSET $offset";
         }
-        Tools::atkdebug('atkpgsqldb.query(): '.$query);
+        $this->debugger->addDebug('atkpgsqldb.query(): '.$query);
 
         /* connect to database */
         if ($this->connect() == self::DB_SUCCESS) {
@@ -503,14 +504,14 @@ class PgSqlDb extends Db
     public function commit()
     {
         if ($this->m_link_id) {
-            Tools::atkdebug('Commit');
+            $this->debugger->addDebug('Commit');
             $this->_query('COMMIT', true);
         }
     }
 
     public function savepoint($name)
     {
-        Tools::atkdebug(get_class($this)."::savepoint $name");
+        $this->debugger->addDebug(get_class($this)."::savepoint $name");
         $this->_query('SAVEPOINT '.$name, true);
     }
 
@@ -518,7 +519,7 @@ class PgSqlDb extends Db
     {
         if ($this->m_link_id) {
             if (!empty($savepoint)) {
-                Tools::atkdebug(get_class($this)."::rollback (rollback to savepoint $savepoint)");
+                $this->debugger->addDebug(get_class($this)."::rollback (rollback to savepoint $savepoint)");
                 $this->_query('ROLLBACK TO SAVEPOINT '.$savepoint, true);
             } else {
                 $this->_query('ROLLBACK', true);

@@ -242,16 +242,16 @@ class UrlAttribute extends Attribute
         if (!$result && $show_error) {
             // if result of all validations is false, display error-messages
             if ($absolute_result === false) {
-                Tools::triggerError($record, $this->fieldName(), 'invalid_absolute_no_anchor_url', Tools::atktext('invalid_absolute_no_anchor_url'));
+                Tools::triggerError($record, $this->fieldName(), 'invalid_absolute_no_anchor_url', $this->getOwnerInstance()->getLanguage()->trans('invalid_absolute_no_anchor_url'));
             }
             if ($anchor_result === false) {
-                Tools::triggerError($record, $this->fieldName(), 'invalid_url_anchor', Tools::atktext('invalid_url_anchor'));
+                Tools::triggerError($record, $this->fieldName(), 'invalid_url_anchor', $this->getOwnerInstance()->getLanguage()->trans('invalid_url_anchor'));
             }
             if ($absolute_anchor_result === false) {
-                Tools::triggerError($record, $this->fieldName(), 'invalid_absolute_url', Tools::atktext('invalid_absolute_url'));
+                Tools::triggerError($record, $this->fieldName(), 'invalid_absolute_url', $this->getOwnerInstance()->getLanguage()->trans('invalid_absolute_url'));
             }
             if ($relative_result === false) {
-                Tools::triggerError($record, $this->fieldName(), 'invalid_relative_url', Tools::atktext('invalid_relative_url'));
+                Tools::triggerError($record, $this->fieldName(), 'invalid_relative_url', $this->getOwnerInstance()->getLanguage()->trans('invalid_relative_url'));
             }
         }
         

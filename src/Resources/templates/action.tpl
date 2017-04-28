@@ -1,4 +1,3 @@
-{atkmessages}
 {if isset($helplink)}
     <div id="action-helplink">
         {$helplink}<br/>

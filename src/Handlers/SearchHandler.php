@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Handlers;
 
 use Sintattica\Atk\Core\Tools;
+use Sintattica\Atk\Errors\AtkErrorException;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Attributes\Attribute;
@@ -43,7 +44,7 @@ class SearchHandler extends AbstractSearchHandler
 
             return;
         } elseif (!empty($this->m_postvars['atkcancel'])) {
-            $sm = SessionManager::getInstance();
+            $sm = $this->sessionManager;
             $url = Tools::dispatch_url($this->getPreviousNode(), $this->getPreviousAction());
             $url = $sm->sessionUrl($url, $sm->atkLevel() > 0 ? SessionManager::SESSION_BACK : SessionManager::SESSION_REPLACE);
 
@@ -70,7 +71,7 @@ class SearchHandler extends AbstractSearchHandler
      */
     public function redirectToResults()
     {
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
         $url = Tools::dispatch_url($this->getPreviousNode(), $this->getPreviousAction(), $this->fetchCriteria());
         $url = $sm->sessionUrl($url, $sm->atkLevel() > 0 ? SessionManager::SESSION_BACK : SessionManager::SESSION_REPLACE);
         $this->m_node->redirect($url);
@@ -83,7 +84,7 @@ class SearchHandler extends AbstractSearchHandler
      */
     public function getPreviousNode()
     {
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         return $sm->atkLevel() > 0 ? $sm->stackVar('atknodeuri', '', $sm->atkLevel() - 1) : $this->m_node->atkNodeUri();
     }
@@ -95,7 +96,7 @@ class SearchHandler extends AbstractSearchHandler
      */
     public function getPreviousAction()
     {
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         return $sm->atkLevel() > 0 ? $sm->stackVar('atkaction', '', $sm->atkLevel() - 1) : 'admin';
     }
@@ -106,6 +107,7 @@ class SearchHandler extends AbstractSearchHandler
      * @param string $partial full partial
      *
      * @return string
+     * @throws AtkErrorException
      */
     public function partial_attribute($partial)
     {
@@ -113,9 +115,7 @@ class SearchHandler extends AbstractSearchHandler
 
         $attr = $this->m_node->getAttribute($attribute);
         if ($attr == null) {
-            Tools::atkerror("Unknown / invalid attribute '$attribute' for node '".$this->m_node->atkNodeUri()."'");
-
-            return '';
+            throw new AtkErrorException("Unknown / invalid attribute '$attribute' for node '".$this->m_node->atkNodeUri()."'");
         }
 
         return $attr->partial($partial, 'add');
@@ -135,11 +135,11 @@ class SearchHandler extends AbstractSearchHandler
         $ui = $this->getUi();
 
         if (is_object($ui)) {
-            $sm = SessionManager::getInstance();
+            $sm = $this->sessionManager;
             $params = [];
             $params['formstart'] = '<form name="entryform" action="'.Config::getGlobal('dispatcher').'" method="post">';
 
-            $params['formstart'] .= $sm->formState(SessionManager::SESSION_REPLACE);
+            $params['formstart'] .= $sm->formState($this->sessionManager::SESSION_REPLACE);
             $params['formstart'] .= '<input type="hidden" name="atkaction" value="search">';
 
             $params['formstart'] .= '<input type="hidden" name="atknodeuri" value="'.$node->atkNodeUri().'">';
@@ -160,7 +160,7 @@ class SearchHandler extends AbstractSearchHandler
 
             return $total;
         } else {
-            Tools::atkerror('ui object failure');
+            throw new AtkErrorException('ui object failure');
         }
 
         return '';
@@ -203,7 +203,7 @@ class SearchHandler extends AbstractSearchHandler
 
             return $ui->render($node->getTemplate('search', $record), $params);
         } else {
-            Tools::atkerror('ui object error');
+            throw new AtkErrorException('ui object error');
         }
     }
 

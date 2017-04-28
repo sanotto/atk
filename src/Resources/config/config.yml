@@ -1,0 +1,26 @@
+parameters:
+  atk.environment: dev
+  atk.modules:
+    - App\Modules\Auth\Module
+    - App\Modules\App\Module
+    - App\Modules\Testbed\Module
+
+  atk.security.authentication: db
+  atk.security.authorization: db
+  atk.security.securityscheme: group
+
+  atk.template.compile_dir: '%atk.root_dir%/var/atktmp/tpl'
+  atk.template.template_dir: '%atk.root_dir%/vendor/sintattica/atk/src/Resources/templates'
+  atk.template.force_compile: false
+
+  atk.debug.level: 1
+  atk.debug.log: ~
+
+  atk.db.db_config:
+    default:
+      host: localhost
+      db: atk-testbed
+      user: root
+      password: ~
+      charset: utf8
+      driver: MySqli

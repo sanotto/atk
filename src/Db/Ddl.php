@@ -4,6 +4,7 @@ namespace Sintattica\Atk\Db;
 
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Core\Config;
+use Sintattica\Atk\Errors\AtkErrorException;
 
 /**
  * The Data Definition Language abstract base class.
@@ -461,16 +462,11 @@ class Ddl
      */
     public function executeCreate()
     {
-        if (!isset($this->m_db)) {
-            $this->m_db = Db::getInstance();
-        }
-
         $query = $this->buildCreate();
         if ($query != '') {
             return $this->m_db->query($query);
-        } else {
-            Tools::atkdebug('ddl::executeCreate: nothing to do!');
         }
+        $this->m_db->getDebugger()->addDebug('ddl::executeCreate: nothing to do!');
 
         return false;
     }
@@ -488,10 +484,6 @@ class Ddl
      */
     public function executeAlter()
     {
-        if (!isset($this->m_db)) {
-            $this->m_db = Db::getInstance();
-        }
-
         $queries = $this->buildAlter();
         if (count($queries) > 0) {
             for ($i = 0, $_i = count($queries); $i < $_i; ++$i) {
@@ -503,9 +495,9 @@ class Ddl
             }
 
             return true;
-        } else {
-            Tools::atkdebug('ddl::executeCreate: nothing to do!');
         }
+
+        $this->m_db->getDebugger()->addDebug('ddl::executeCreate: nothing to do!');
 
         return false;
     }
@@ -518,16 +510,12 @@ class Ddl
      */
     public function executeDrop()
     {
-        if (!isset($this->m_db)) {
-            $this->m_db = Db::getInstance();
-        }
-
         $query = $this->buildDrop();
         if ($query != '') {
             return $this->m_db->query($query);
-        } else {
-            Tools::atkdebug('ddl::executeDrop: nothing to do!');
         }
+
+        $this->m_db->getDebugger()->addDebug('ddl::executeDrop: nothing to do!');
 
         return false;
     }
@@ -544,16 +532,12 @@ class Ddl
      */
     public function executeCreateView($name, $select, $with_check_option)
     {
-        if (!isset($this->m_db)) {
-            $this->m_db = Db::getInstance();
-        }
-
         $query = $this->buildView($name, $select, $with_check_option);
         if ($query != '') {
             return $this->m_db->query($query);
-        } else {
-            Tools::atkdebug('ddl::executeCreateView: nothing to do!');
         }
+
+        $this->m_db->getDebugger()->addDebug('ddl::executeCreateView: nothing to do!');
 
         return false;
     }
@@ -566,12 +550,11 @@ class Ddl
      * @param string $with_check_option - use SQL WITH CHECK OPTION
      *
      * @return string CREATE VIEW query string
+     * @throws AtkErrorException
      */
     public function buildView($name, $select, $with_check_option)
     {
-        Tools::atkerror("buildView don't support by this db or by this db driver");
-
-        return '';
+        throw new AtkErrorException("buildView don't support by this db or by this db driver");
     }
 
     /**
@@ -584,16 +567,12 @@ class Ddl
      */
     public function executeDropView($name)
     {
-        if (!isset($this->m_db)) {
-            $this->m_db = Db::getInstance();
-        }
-
         $query = $this->dropView($name);
         if ($query != '') {
             return $this->m_db->query($query);
-        } else {
-            Tools::atkdebug('ddl::executeDropView: nothing to do!');
         }
+
+        $this->m_db->getDebugger()->addDebug('ddl::executeDropView: nothing to do!');
 
         return false;
     }
@@ -603,13 +582,11 @@ class Ddl
      *
      * @param string $name - name of view
      *
-     * @return string CREATE VIEW query string
+     * @throws AtkErrorException
      */
     public function dropView($name)
     {
-        Tools::atkerror("dropView don't support by this db or by this db driver");
-
-        return '';
+        throw new AtkErrorException("dropView don't support by this db or by this db driver");
     }
 
     /**

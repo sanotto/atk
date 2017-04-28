@@ -94,11 +94,9 @@ class DeleteHandler extends ActionHandler
      */
     protected function _doDelete()
     {
-        $atkstoretype = '';
-        $sessionmanager = SessionManager::getInstance();
-        if ($sessionmanager) {
-            $atkstoretype = $sessionmanager->stackVar('atkstore');
-        }
+        $sessionmanager = $this->sessionManager;
+        $atkstoretype = $sessionmanager->stackVar('atkstore');
+
         switch ($atkstoretype) {
             case 'session':
                 $result = $this->_doDeleteSession();

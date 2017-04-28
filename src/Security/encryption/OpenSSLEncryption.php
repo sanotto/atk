@@ -2,7 +2,7 @@
 
 namespace Sintattica\Atk\Security\encryption;
 
-use Sintattica\Atk\Core\Tools;
+use Sintattica\Atk\Errors\AtkErrorException;
 
 /**
  * Class for encrypting and decrypting data with the openssl algorithm
@@ -33,6 +33,7 @@ class OpenSSLEncryption extends Encryption
      * @param mixed $key the key we want to encrypt the data with
      *
      * @return mixed the encrypted data
+     * @return AtkErrorException
      */
     public function encrypt($input, $key)
     {
@@ -42,7 +43,7 @@ class OpenSSLEncryption extends Encryption
         if ($key) {
             openssl_public_encrypt($input, $encrypted, $key);
         } else {
-            Tools::atkerror('OpenSSLEncryption::encrypt << not a valid key passed');
+            throw new AtkErrorException('OpenSSLEncryption::encrypt << not a valid key passed');
         }
 
         return $this->stripbackslashes($encrypted);
@@ -55,6 +56,7 @@ class OpenSSLEncryption extends Encryption
      * @param mixed $key the key we want to encrypt the data with
      *
      * @return mixed the encrypted data
+     * @throws AtkErrorException
      */
     public function decrypt($input, $key)
     {
@@ -63,9 +65,8 @@ class OpenSSLEncryption extends Encryption
         $key = openssl_get_privatekey($keys['private']);
 
         if ($key) {
-            Tools::atkerror('OpenSSLEncryption::decrypt << not a valid key passed');
+            throw new AtkErrorException('OpenSSLEncryption::decrypt << not a valid key passed');
         } else {
-            echo "decrypt for: input:$input, decrypted: $decrypted, key: $key";
             openssl_private_decrypt($input, $decrypted, $key);
         }
 

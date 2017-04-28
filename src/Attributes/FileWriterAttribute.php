@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Attributes;
 
 use Sintattica\Atk\Core\Tools;
+use Sintattica\Atk\Errors\AtkErrorException;
 use Sintattica\Atk\Utils\StringParser;
 
 /**
@@ -44,6 +45,7 @@ class FileWriterAttribute extends TextAttribute
      * @param array $record The record that holds this attribute's value.
      *
      * @return string The database compatible value
+     * @throws AtkErrorException
      */
     public function value2db($record)
     {
@@ -58,7 +60,7 @@ class FileWriterAttribute extends TextAttribute
 
         if (!$parser->isComplete($record)) {
             // record does not contain all data. Let's lazy load.
-            Tools::atkdebug('[atkfilewriter] Lazy loading rest of record to complete filename.');
+            $this->getOwnerInstance()->getDebugger()->addDebug('[atkfilewriter] Lazy loading rest of record to complete filename.');
             $record = $this->m_ownerInstance->select($record['atkprimkey'])->getFirstRow();
         }
 
@@ -67,11 +69,11 @@ class FileWriterAttribute extends TextAttribute
         $fp = @fopen($filename, 'w');
 
         if ($fp == false) {
-            Tools::atkerror('['.$this->fieldName()."] couldn't open $filename for writing!");
+            throw new AtkErrorException('['.$this->fieldName()."] couldn't open $filename for writing!");
         } else {
             fwrite($fp, $contents);
             fclose($fp);
-            Tools::atkdebug('['.$this->fieldName()."] succesfully wrote $filename..");
+            $this->getOwnerInstance()->getDebugger()->addDebug('['.$this->fieldName()."] succesfully wrote $filename..");
         }
 
         return $this->escapeSQL($contents);
@@ -93,14 +95,14 @@ class FileWriterAttribute extends TextAttribute
         $filename = $parser->parse($record);
 
         if (!file_exists($filename)) {
-            Tools::atkdebug('['.$this->fieldName()."] warning: $filename doesn't exist");
+            $this->getOwnerInstance()->getDebugger()->addDebug('['.$this->fieldName()."] warning: $filename doesn't exist");
 
             return $record[$this->fieldName()];
         } else {
             if ($record[$this->fieldName()] == '') {
                 // db is empty. if file contains stuff, use that.          
                 $contents = implode('', file($filename));
-                Tools::atkdebug('['.$this->fieldName()."] succesfully read $filename");
+                $this->getOwnerInstance()->getDebugger()->addDebug('['.$this->fieldName()."] succesfully read $filename");
 
                 return $contents;
             } else {

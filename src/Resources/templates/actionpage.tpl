@@ -1,5 +1,4 @@
 <div class="container-fluid">
-    {atkmessages}
     {if count($atkmessages)}
         <div class="atkmessages">
             {foreach from=$atkmessages item=message}

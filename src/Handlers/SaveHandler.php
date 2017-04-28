@@ -167,7 +167,7 @@ class SaveHandler extends ActionHandler
      */
     protected function getSuccessReturnURL($record)
     {
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
         if ($this->m_node->hasFlag(Node::NF_EDITAFTERADD) && $this->m_node->allowed('edit')) {
             // forward atkpkret for newly added records
             $extra = '';
@@ -178,7 +178,7 @@ class SaveHandler extends ActionHandler
             $url = Config::getGlobal('dispatcher').'?atknodeuri='.$this->m_node->atkNodeUri();
             $url .= '&atkaction=edit';
             $url .= '&atkselector='.rawurlencode($this->m_node->primaryKey($record));
-            $location = $sm->sessionUrl($url.$extra, SessionManager::SESSION_REPLACE, $this->_getSkip() - 1);
+            $location = $sm->sessionUrl($url.$extra, $this->sessionManager::SESSION_REPLACE, $this->_getSkip() - 1);
         } else {
             if ($this->m_node->hasFlag(Node::NF_ADDAFTERADD) && isset($this->m_postvars['atksaveandnext'])) {
                 $filter = '';
@@ -186,7 +186,7 @@ class SaveHandler extends ActionHandler
                     $filter = '&atkfilter='.rawurlencode($this->m_node->m_postvars['atkfilter']);
                 }
                 $url = Config::getGlobal('dispatcher').'?atknodeuri='.$this->m_node->atkNodeUri().'&atkaction='.$this->getAddAction();
-                $location = $sm->sessionUrl($url.$filter, SessionManager::SESSION_REPLACE, $this->_getSkip() - 1);
+                $location = $sm->sessionUrl($url.$filter, $this->sessionManager::SESSION_REPLACE, $this->_getSkip() - 1);
             } else {
                 // normal succesful save
                 $location = $this->m_node->feedbackUrl('save', self::ACTION_SUCCESS, $record, '', $this->_getSkip());
@@ -205,11 +205,10 @@ class SaveHandler extends ActionHandler
      */
     public function storeRecord(&$record)
     {
-        $atkstoretype = '';
-        $sessionmanager = SessionManager::getInstance();
-        if ($sessionmanager) {
-            $atkstoretype = $sessionmanager->stackVar('atkstore');
-        }
+
+        $sessionmanager = $this->sessionManager;
+        $atkstoretype = $sessionmanager->stackVar('atkstore');
+
         switch ($atkstoretype) {
             case 'session':
                 return $this->storeRecordInSession($record);
@@ -227,7 +226,6 @@ class SaveHandler extends ActionHandler
      */
     protected function storeRecordInSession(&$record)
     {
-        Tools::atkdebug('STORING RECORD IN SESSION');
         $result = SessionStore::getInstance()->addDataRow($record, $this->m_node->primaryKeyField());
 
         return $result !== false;

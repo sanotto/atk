@@ -18,6 +18,14 @@ class DbAuth extends AuthInterface
 {
     public $m_rightscache = [];
 
+    protected $db;
+
+    public function __construct(SecurityManager $securityManager, Db $db)
+    {
+        $this->db = $db;
+    }
+
+
     /**
      * Build the query for selecting the user for authentication.
      *
@@ -75,10 +83,9 @@ class DbAuth extends AuthInterface
             return SecurityManager::AUTH_UNVERIFIED;
         } // can't verify if we have no userid
 
-        $db = Db::getInstance(Config::getGlobal('auth_database'));
-        $query = $this->buildSelectUserQuery($db->escapeSQL($user), Config::getGlobal('auth_usertable'), Config::getGlobal('auth_userfield'),
+        $query = $this->buildSelectUserQuery($this->db->escapeSQL($user), Config::getGlobal('auth_usertable'), Config::getGlobal('auth_userfield'),
             Config::getGlobal('auth_passwordfield'), Config::getGlobal('auth_accountdisablefield'), Config::getGlobal('auth_accountenableexpression'));
-        $recs = $db->getRows($query);
+        $recs = $this->db->getRows($query);
         if (count($recs) > 0 && $this->isLocked($recs[0])) {
             return SecurityManager::AUTH_LOCKED;
         }
@@ -90,12 +97,11 @@ class DbAuth extends AuthInterface
 
     public function isValidUser($user)
     {
-        $db = Db::getInstance(Config::getGlobal('auth_database'));
         $usertable = Config::getGlobal('auth_usertable');
         $userfield = Config::getGlobal('auth_userfield');
         $disablefield = Config::getGlobal('auth_accountdisablefield');
         $enableexpression = Config::getGlobal('auth_accountenableexpression');
-        $sql = "SELECT COUNT(*) AS cnt FROM `$usertable` WHERE `$userfield` = '".$db->escapeSQL($user)."'";
+        $sql = "SELECT COUNT(*) AS cnt FROM `$usertable` WHERE `$userfield` = '".$this->db->escapeSQL($user)."'";
 
 
         if ($disablefield) {
@@ -105,7 +111,7 @@ class DbAuth extends AuthInterface
             $sql .= " AND $enableexpression";
         }
 
-        if ($db->getValue($sql)) {
+        if ($this->db->getValue($sql)) {
             return true;
         };
 
@@ -178,7 +184,6 @@ class DbAuth extends AuthInterface
         $groupparentfield = Config::getGlobal('auth_groupparentfield');
         $accountenableexpression = Config::getGlobal('auth_accountenableexpression');
 
-        $db = Db::getInstance(Config::getGlobal('auth_database'));
         if ($usertable == $leveltable || $leveltable == '') {
             // Level and userid are stored in the same table.
             // This means one user can only have one level.
@@ -187,7 +192,7 @@ class DbAuth extends AuthInterface
             // Level and userid are stored in two separate tables. This could
             // mean (but doesn't have to) that a user can have more than one
             // level.
-            $qryobj = $db->createQuery();
+            $qryobj = $this->db->createQuery();
             $qryobj->addTable($usertable);
             $qryobj->addField("$usertable.*");
             $qryobj->addField("usergroup.$levelfield");
@@ -204,7 +209,7 @@ class DbAuth extends AuthInterface
         if ($accountenableexpression) {
             $query .= " AND $accountenableexpression";
         }
-        $recs = $db->getRows($query);
+        $recs = $this->db->getRows($query);
 
         return $recs;
     }
@@ -218,17 +223,15 @@ class DbAuth extends AuthInterface
      */
     public function getParentGroups($parents)
     {
-        $db = Db::getInstance(Config::getGlobal('auth_database'));
-
         $grouptable = Config::getGlobal('auth_grouptable');
         $groupfield = Config::getGlobal('auth_groupfield');
         $groupparentfield = Config::getGlobal('auth_groupparentfield');
 
-        $query = $db->createQuery();
+        $query = $this->db->createQuery();
         $query->addField($groupparentfield);
         $query->addTable($grouptable);
         $query->addCondition("$grouptable.$groupfield IN (".implode(',', $parents).')');
-        $recs = $db->getRows($query->buildSelect(true));
+        $recs = $this->db->getRows($query->buildSelect(true));
 
         return $recs;
     }
@@ -344,12 +347,11 @@ class DbAuth extends AuthInterface
      */
     public function getEntity($node, $action)
     {
-        $db = Db::getInstance(Config::getGlobal('auth_database'));
 
         if (!isset($this->m_rightscache[$node]) || count($this->m_rightscache[$node]) == 0) {
             $query = 'SELECT * FROM '.Config::getGlobal('auth_accesstable')." WHERE node='$node'";
 
-            $this->m_rightscache[$node] = $db->getRows($query);
+            $this->m_rightscache[$node] = $this->db->getRows($query);
         }
 
         $result = [];
@@ -383,11 +385,9 @@ class DbAuth extends AuthInterface
      */
     public function getAttribEntity($node, $attrib, $mode)
     {
-        $db = Db::getInstance(Config::getGlobal('auth_database'));
-
         $query = "SELECT * FROM attribaccess WHERE node='$node' AND attribute='$attrib' AND mode='$mode'";
 
-        $rights = $db->getRows($query);
+        $rights = $this->db->getRows($query);
 
         $result = [];
 
@@ -423,7 +423,6 @@ class DbAuth extends AuthInterface
      */
     public function getUserList()
     {
-        $db = Db::getInstance(Config::getGlobal('auth_database'));
         $query = 'SELECT * FROM '.Config::getGlobal('auth_usertable');
 
         $accountdisablefield = Config::getGlobal('auth_accountdisablefield');
@@ -439,7 +438,7 @@ class DbAuth extends AuthInterface
             }
         }
 
-        $recs = $db->getRows($query);
+        $recs = $this->db->getRows($query);
 
         $userlist = [];
         $stringparser = new StringParser(Config::getGlobal('auth_userdescriptor'));
@@ -462,52 +461,5 @@ class DbAuth extends AuthInterface
     public function getPasswordPolicy()
     {
         return self::PASSWORD_RETRIEVABLE;
-    }
-
-    /**
-     * This function returns password or false, if password can't be retrieve/recreate.
-     *
-     * @param string $username User for which the password should be regenerated
-     *
-     * @return mixed string with password or false
-     */
-    public function gettingPassword($username)
-    {
-        // Query the database for user records having the given username and return if not found
-        $atk = Atk::getInstance();
-        $usernode = $atk->atkGetNode(Config::getGlobal('auth_usernode'));
-        $selector = sprintf("%s.%s = '%s'", Config::getGlobal('auth_usertable'), Config::getGlobal('auth_userfield'), $username);
-        $userrecords = $usernode->select($selector)->mode('edit')->includes(array(
-            Config::getGlobal('auth_userpk'),
-            Config::getGlobal('auth_emailfield'),
-            Config::getGlobal('auth_passwordfield'),
-        ))->getAllRows();
-        if (count($userrecords) != 1) {
-            Tools::atkdebug("User '$username' not found.");
-
-            return false;
-        }
-
-        // Retrieve the email address
-        $email = $userrecords[0][Config::getGlobal('auth_emailfield')];
-        if (empty($email)) {
-            Tools::atkdebug("Email address for '$username' not available.");
-
-            return false;
-        }
-
-        // Regenerate the password
-        /** @var \Sintattica\Atk\Attributes\PasswordAttribute $passwordattr */
-        $passwordattr = $usernode->getAttribute(Config::getGlobal('auth_passwordfield'));
-        $newpassword = $passwordattr->generatePassword();
-
-        // Update the record in the database
-        $userrecords[0][Config::getGlobal('auth_passwordfield')]['hash'] = password_hash($newpassword, PASSWORD_DEFAULT);
-        $usernode->updateDb($userrecords[0], true, '', array(Config::getGlobal('auth_passwordfield')));
-
-        $usernode->getDb()->commit();
-
-        // Return true
-        return $newpassword;
     }
 }

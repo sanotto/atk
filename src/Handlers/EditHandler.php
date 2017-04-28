@@ -153,6 +153,7 @@ class EditHandler extends ViewEditBase
         $node = $this->m_node;
 
         $params = $node->getDefaultActionParams();
+        $params['atkmessages'] = $this->sessionManager->getMessageQueue()->getMessages();
         $params['title'] = $node->actionTitle('edit', $record);
         $params['formstart'] = $this->getFormStart();
         $params['header'] = $this->invoke('editHeader', $record);
@@ -267,7 +268,7 @@ class EditHandler extends ViewEditBase
      */
     public function getFormStart()
     {
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         $formstart = '<form id="entryform" name="entryform" enctype="multipart/form-data" action="'.Config::getGlobal('dispatcher').'"'.' method="post" onsubmit="return ATK.globalSubmit(this,false)" class="form-horizontal" role="form" autocomplete="off">'.$sm->formState($this->getUpdateSessionStatus());
 
@@ -549,7 +550,6 @@ class EditHandler extends ViewEditBase
 
         $ui = $this->getUi();
         $page = $this->getPage();
-        $page->register_script(Config::getGlobal('assets_url').'javascript/formsubmit.js');
 
         // register fields that contain errornous values
         $page->register_scriptcode('var atkErrorFields = '.Json::encode($errorFields).';');
@@ -566,7 +566,7 @@ class EditHandler extends ViewEditBase
 
         $params['errortitle'] = $error_title;
         $params['errors'] = $errors; // Add the list of errors.
-        Tools::atkdebug("Render editform - $template");
+        $this->debugger->addDebug("Render editform - $template");
         if ($template) {
             $result .= $ui->render($template, $params);
         } else {

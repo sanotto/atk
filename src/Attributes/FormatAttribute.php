@@ -114,7 +114,7 @@ class FormatAttribute extends Attribute
      */
     public function _formatErrorString($pos, $specifier)
     {
-        return sprintf(Tools::atktext('error_format_mismatch', 'atk', $this->m_owner), $pos, $specifier);
+        return sprintf($this->getOwnerInstance()->getLanguage()->trans('error_format_mismatch', 'atk', $this->m_owner), $pos, $specifier);
     }
 
     /**

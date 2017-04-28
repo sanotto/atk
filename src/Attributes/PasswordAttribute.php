@@ -115,7 +115,7 @@ class PasswordAttribute extends Attribute
                 ))) {
                     $this->m_restrictions[strtolower($name)] = $value;
                 } else {
-                    Tools::atkdebug("atkPasswordAttribute->setRestrictions(): Unknown restriction: \"$name\"=\"$value\"", Tools::DEBUG_WARNING);
+                    $this->getOwnerInstance()->getDebugger()->addDebug("atkPasswordAttribute->setRestrictions(): Unknown restriction: \"$name\"=\"$value\"", Tools::DEBUG_WARNING);
                 }
             }
         }
@@ -150,8 +150,8 @@ class PasswordAttribute extends Attribute
         if ($mode != 'edit' && $mode != 'update') {
             /* insert */
             if (!$this->m_generate) {
-                $result = Tools::atktext('password_new',
-                        'atk').':<br>'.'<input autocomplete="off" '.$cssClass.' type="password" id="'.$id.'[new]" name="'.$name.'[new]"'.($this->m_maxsize > 0 ? ' maxlength="'.$this->m_maxsize.'"' : '').($this->m_size > 0 ? ' size="'.$this->m_size.'"' : '').'><br><br>'.Tools::atktext('password_again',
+                $result = $this->getOwnerInstance()->getLanguage()->trans('password_new',
+                        'atk').':<br>'.'<input autocomplete="off" '.$cssClass.' type="password" id="'.$id.'[new]" name="'.$name.'[new]"'.($this->m_maxsize > 0 ? ' maxlength="'.$this->m_maxsize.'"' : '').($this->m_size > 0 ? ' size="'.$this->m_size.'"' : '').'><br><br>'.$this->getOwnerInstance()->getLanguage()->trans('password_again',
                         'atk').':<br>'.'<input autocomplete="off" '.$cssClass.' type="password" id="'.$id.'[again]" name="'.$name.'[again]"'.($this->m_maxsize > 0 ? ' maxlength="'.$this->m_maxsize.'"' : '').($this->m_size > 0 ? ' size="'.$this->m_size.'"' : '').'>';
             } else {
                 $password = $this->generatePassword(8, true);
@@ -164,11 +164,11 @@ class PasswordAttribute extends Attribute
             $result = '<input type="hidden" name="'.$name.'[hash]"'.' value="'.$record[$this->fieldName()]['hash'].'">';
 
             if (!$this->hasFlag(self::AF_PASSWORD_NO_VALIDATE)) {
-                $result .= Tools::atktext('password_current',
+                $result .= $this->getOwnerInstance()->getLanguage()->trans('password_current',
                         'atk').':<br>'.'<input autocomplete="off" type="password" '.$cssClass.' id="'.$id.'[current]" name="'.$name.'[current]"'.($this->m_maxsize > 0 ? ' maxlength="'.$this->m_maxsize.'"' : '').($this->m_size > 0 ? ' size="'.$this->m_size.'"' : '').'><br><br>';
             }
-            $result .= Tools::atktext('password_new',
-                    'atk').':<br>'.'<input autocomplete="off" type="password" '.$cssClass.' id="'.$id.'[new]" name="'.$name.'[new]"'.($this->m_maxsize > 0 ? ' maxlength="'.$this->m_maxsize.'"' : '').($this->m_size > 0 ? ' size="'.$this->m_size.'"' : '').'><br><br>'.Tools::atktext('password_again',
+            $result .= $this->getOwnerInstance()->getLanguage()->trans('password_new',
+                    'atk').':<br>'.'<input autocomplete="off" type="password" '.$cssClass.' id="'.$id.'[new]" name="'.$name.'[new]"'.($this->m_maxsize > 0 ? ' maxlength="'.$this->m_maxsize.'"' : '').($this->m_size > 0 ? ' size="'.$this->m_size.'"' : '').'><br><br>'.$this->getOwnerInstance()->getLanguage()->trans('password_again',
                     'atk').':<br>'.'<input autocomplete="off" type="password" '.$cssClass.' id="'.$id.'[again]" name="'.$name.'[again]"'.($this->m_maxsize > 0 ? ' maxlength="'.$this->m_maxsize.'"' : '').($this->m_size > 0 ? ' size="'.$this->m_size.'"' : '').'>';
         }
 
@@ -279,7 +279,7 @@ class PasswordAttribute extends Attribute
     {
         // If no restrictions are set, return "No restrictions apply to this password"
         if (count($this->m_restrictions) == 0) {
-            return Tools::atktext('no_restrictions_apply_to_this_password', 'atk');
+            return $this->getOwnerInstance()->getLanguage()->trans('no_restrictions_apply_to_this_password', 'atk');
         }
 
         // Start with an empty string
@@ -290,9 +290,9 @@ class PasswordAttribute extends Attribute
             // Add a human readable form of the current restriction to the text string and append a linebreak
             if ($value > 0) {
                 if ($name == 'minsize') {
-                    $text .= sprintf(Tools::atktext('the_password_should_be_at_least_%d_characters_long', 'atk'), $value);
+                    $text .= sprintf($this->getOwnerInstance()->getLanguage()->trans('the_password_should_be_at_least_%d_characters_long', 'atk'), $value);
                 } else {
-                    $text .= sprintf(Tools::atktext('the_password_should_at_least_contain_%d_%s', 'atk'), $value, Tools::atktext(substr($name, 3), 'atk'));
+                    $text .= sprintf($this->getOwnerInstance()->getLanguage()->trans('the_password_should_at_least_contain_%d_%s', 'atk'), $value, $this->getOwnerInstance()->getLanguage()->trans(substr($name, 3), 'atk'));
                 }
                 $text .= "<br />\n";
             }
@@ -383,7 +383,7 @@ class PasswordAttribute extends Attribute
      */
     public function display($record, $mode)
     {
-        return Tools::atktext('password_hidden', 'atk');
+        return $this->getOwnerInstance()->getLanguage()->trans('password_hidden', 'atk');
     }
 
     /**

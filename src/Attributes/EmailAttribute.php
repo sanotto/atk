@@ -80,7 +80,7 @@ class EmailAttribute extends Attribute
                 //now check if domain exists, searches DNS for MX records
                 list(, $domain) = explode('@', $email, 2);
                 if (!(self::validateAddressDomain($domain, false))) {
-                    Tools::triggerError($record, $this->fieldName(), 'error_unkown_domain', Tools::atktext('error_unkown_domain').' '.$domain);
+                    Tools::triggerError($record, $this->fieldName(), 'error_unkown_domain', $this->getOwnerInstance()->getLanguage()->trans('error_unkown_domain').' '.$domain);
                 }
             }
         }

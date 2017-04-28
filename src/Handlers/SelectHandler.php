@@ -49,7 +49,7 @@ class SelectHandler extends ActionHandler
     {
         $node = $this->getNode();
 
-        $grid = DataGrid::create($node, 'select');
+        $grid = DataGrid::create($node, 'select', null, false, true, $this->sessionManager);
         $actions = array('select' => Tools::atkurldecode($grid->getPostvar('atktarget')));
         $grid->removeFlag(DataGrid::MULTI_RECORD_ACTIONS);
         $grid->removeFlag(DataGrid::MULTI_RECORD_PRIORITY_ACTIONS);
@@ -61,7 +61,7 @@ class SelectHandler extends ActionHandler
             return '';
         }
 
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         $params = [];
         $params['header'] = $node->text('title_select');
@@ -93,7 +93,7 @@ class SelectHandler extends ActionHandler
 
             $this->modifyDataGrid($grid, DataGrid::RESUME);
         } catch (Exception $e) {
-            $grid = DataGrid::create($this->getNode());
+            $grid = DataGrid::create($this->getNode(), null, null, false, true, $this->sessionManager);
 
             $this->modifyDataGrid($grid, DataGrid::RESUME);
         }
@@ -121,7 +121,7 @@ class SelectHandler extends ActionHandler
             return false;
         }
 
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         if ($sm->atkLevel() > 0 && $grid->getPostvar('atkprevlevel', 0) > $sm->atkLevel()) {
             $backUrl = $sm->sessionUrl(Config::getGlobal('dispatcher').'?atklevel='.$sm->newLevel(SessionManager::SESSION_BACK));

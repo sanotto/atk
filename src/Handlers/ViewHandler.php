@@ -40,7 +40,6 @@ class ViewHandler extends ViewEditBase
         }
 
         $page = $this->getPage();
-        $page->register_script(Config::getGlobal('assets_url').'javascript/formsubmit.js');
         $this->notify('view', $record);
         $page->addContent($this->m_node->renderActionPage('admin', $this->invoke('viewPage', $record, $this->m_node, $renderbox)));
     }
@@ -60,9 +59,9 @@ class ViewHandler extends ViewEditBase
      */
     public function getFormStart($record = null)
     {
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
         $formstart = '<form name="entryform" id="entryform" action="'.Config::getGlobal('dispatcher').'" method="get" onsubmit="return ATK.globalSubmit(this,false)">';
-        $formstart .= $sm->formState(SessionManager::SESSION_NESTED);
+        $formstart .= $sm->formState($this->sessionManager::SESSION_NESTED);
         $formstart .= '<input type="hidden" name="atkselector" value="'.$this->getNode()->primaryKey($record).'">';
         $formstart .= '<input type="hidden" class="atksubmitaction" />';
 
@@ -81,37 +80,31 @@ class ViewHandler extends ViewEditBase
     public function viewPage($record, $node, $renderbox = true)
     {
         $ui = $this->getUi();
+        $params = $node->getDefaultActionParams();
+        $tab = $node->getActiveTab();
+        $innerform = $this->viewForm($record, 'view');
 
-        if (is_object($ui)) {
-            $params = $node->getDefaultActionParams();
-            $tab = $node->getActiveTab();
-            $innerform = $this->viewForm($record, 'view');
+        $params['activeTab'] = $tab;
+        $params['atkmessages'] = $this->sessionManager->getMessageQueue()->getMessages();
+        $params['header'] = $this->invoke('viewHeader', $record);
+        $params['title'] = $node->actionTitle($this->m_action, $record);
+        $params['content'] = $node->tabulate('view', $innerform);
 
-            $params['activeTab'] = $tab;
-            $params['header'] = $this->invoke('viewHeader', $record);
-            $params['title'] = $node->actionTitle($this->m_action, $record);
-            $params['content'] = $node->tabulate('view', $innerform);
+        $params['formstart'] = $this->getFormStart($record);
+        $params['buttons'] = $this->getFormButtons($record);
+        $params['formend'] = '</form>';
 
-            $params['formstart'] = $this->getFormStart($record);
-            $params['buttons'] = $this->getFormButtons($record);
-            $params['formend'] = '</form>';
+        $output = $ui->renderAction('view', $params);
 
-            $output = $ui->renderAction('view', $params);
-
-            if (!$renderbox) {
-                return $output;
-            }
-
-            $this->getPage()->setTitle(Tools::atktext('app_shorttitle').' - '.$node->actionTitle($this->m_action, $record));
-
-            $vars = array('title' => $node->actionTitle($this->m_action, $record), 'content' => $output);
-
-            $total = $ui->renderBox($vars, $this->m_boxTemplate);
-
-            return $total;
-        } else {
-            Tools::atkerror('ui object error');
+        if (!$renderbox) {
+            return $output;
         }
+
+        $this->getPage()->setTitle(Tools::atktext('app_shorttitle').' - '.$node->actionTitle($this->m_action, $record));
+        $vars = array('title' => $node->actionTitle($this->m_action, $record), 'content' => $output);
+        $total = $ui->renderBox($vars, $this->m_boxTemplate);
+
+        return $total;
     }
 
     /**

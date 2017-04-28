@@ -34,16 +34,19 @@ class CurrencyAttribute extends NumberAttribute
         parent::__construct($name, $flags, $decimals);
         $this->setAttribSize(10);
 
-        if ($currencysymbol == '') {
-            $currencysymbol = Tools::atktext('currencysymbol', 'atk', '', '', '', true);
-        }
-
         $this->m_currencysymbol = $currencysymbol;
         $this->m_decimalseparator = ($decimalseparator != '' ? $decimalseparator : '.');
         $this->m_thousandsseparator = ($thousandsseparator != '' ? $thousandsseparator : ',');
 
         $this->setUseThousandsSeparator(true);
         $this->setTrailingZeros(true);
+    }
+
+    public function init()
+    {
+        if ($this->m_currencysymbol == '') {
+            $this->m_currencysymbol = $this->getOwnerInstance()->getLanguage()->trans('currencysymbol', 'atk', '', '', '', true);
+        }
     }
 
     /**

@@ -2,13 +2,15 @@
 
 namespace Sintattica\Atk\Handlers;
 
+use Exception;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Core\Tools;
-use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\DataGrid\DataGrid;
 use Sintattica\Atk\RecordList\RecordListCache;
+use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Ui\Page;
 use Sintattica\Atk\Ui\Ui;
+use Sintattica\Atk\Utils\Debugger;
 
 /**
  * Generic action handler base class.
@@ -86,8 +88,7 @@ class ActionHandler
     public $m_returnbehaviour = self::ATK_ACTION_STAY;
 
     public $m_postvars;
-
-    protected $m_boxTemplate = 'box';
+    public $m_renderMode = 'box';
 
     /*
      * Render mode, defaults to "box"
@@ -95,10 +96,20 @@ class ActionHandler
      * @var string
      * @access protected
      */
-    public $m_renderMode = 'box';
+    protected $m_boxTemplate = 'box';
+    protected $debugger;
 
-    public function __construct()
+    /** @var  SessionManager $sessionManager */
+    protected $sessionManager;
+
+    public function __construct(Debugger $debugger)
     {
+        $this->debugger = $debugger;
+    }
+
+    public function setSessionManager(SessionManager $sessionManager)
+    {
+        $this->sessionManager = $sessionManager;
     }
 
     /**
@@ -125,7 +136,7 @@ class ActionHandler
 
         // when we're finished, cleanup any atkrejects (that we haven't set ourselves).
         if (!$this->m_rejecting) {
-            Tools::atkdebug('clearing the stuff');
+            $this->debugger->addDebug('clearing the stuff');
             $this->getRejectInfo(); // this will clear it.
         }
     }
@@ -149,9 +160,7 @@ class ActionHandler
      */
     public function getRejectInfo()
     {
-        $sm = SessionManager::getInstance();
-
-        return $sm->stackVar('atkreject');
+        return $this->sessionManager->stackVar('atkreject');
     }
 
     /**
@@ -163,8 +172,7 @@ class ActionHandler
      */
     public function setRejectInfo($data)
     {
-        $sm = SessionManager::getInstance();
-        $sm->stackVar('atkreject', $data, $sm->atkPrevLevel());
+        $this->sessionManager->stackVar('atkreject', $data, $this->sessionManager->atkPrevLevel());
         $this->m_rejecting = true;
     }
 
@@ -266,68 +274,29 @@ class ActionHandler
      *
      * @param string $methodname The name of the method to call.
      *
-     * @return mixed The method returns the return value of the invoked
-     *               method.
+     * @return mixed The method returns the return value of the invoked method.
+     *
+     * @throws \Exception
      */
     public function invoke($methodname)
     {
-        $arguments = func_get_args(); // Put arguments in a variable (php won't let us pass func_get_args() to other functions directly.
-        // the first argument is $methodname, which we already defined by name.
+        $arguments = func_get_args();
         array_shift($arguments);
 
         if ($this->m_node !== null && method_exists($this->m_node, $methodname)) {
-            Tools::atkdebug("Invoking '$methodname' override on node");
             // We pass the original object as first parameter to the override.
+            $this->debugger->addDebug("Invoking '$methodname' override on node");
             array_unshift($arguments, $this);
-            $arguments[0] = &$this; // reference copy workaround;
-            return call_user_func_array(array(&$this->m_node, $methodname), $arguments);
-        } else {
-            if (method_exists($this, $methodname)) {
-                Tools::atkdebug("Invoking '$methodname' on ActionHandler for action ".$this->m_action);
+            $arguments[0] = $this;
 
-                return call_user_func_array(array(&$this, $methodname), $arguments);
-            }
-        }
-        Tools::atkerror("Undefined method '$methodname' in ActionHandler");
+            return call_user_func_array([$this->m_node, $methodname], $arguments);
+        } elseif (method_exists($this, $methodname)) {
+            $this->debugger->addDebug("Invoking '$methodname' on ActionHandler for action ".$this->m_action);
 
-        return;
-    }
-
-    /**
-     * Static factory method to get the default action handler for a certain
-     * action.
-     *
-     * When no action handler class can be found for the action, a default
-     * handler is instantiated and returned. The default handler assumes that
-     * the node has an action_.... method, that will be called when the
-     * actionhandler's handle() mehod is called.
-     *
-     * @param string $action
-     *
-     * @return ActionHandler
-     */
-    public static function getDefaultHandler($action)
-    {
-        $class = __NAMESPACE__.'\\'.ucfirst($action).'Handler';
-        if (class_exists($class)) {
-            return new $class();
+            return call_user_func_array([$this, $methodname], $arguments);
         }
 
-        return new self();
-    }
-
-    /**
-     * Modify grid.
-     *
-     * @param DataGrid $grid grid
-     * @param int $mode CREATE or RESUME
-     */
-    protected function modifyDataGrid(DataGrid $grid, $mode)
-    {
-        $method = 'modifyDataGrid';
-        if (method_exists($this->getNode(), $method)) {
-            $this->getNode()->$method($grid, $mode);
-        }
+        throw new Exception("Undefined method '$methodname' in ActionHandler");
     }
 
     /**
@@ -339,8 +308,7 @@ class ActionHandler
     {
         static $recordlistcache;
         if (!$recordlistcache) {
-            $recordlistcache = new RecordListCache();
-            $recordlistcache->setNode($this->m_node);
+            $recordlistcache = new RecordListCache($this->m_node);
             $recordlistcache->setPostvars($this->m_postvars);
         }
 
@@ -472,16 +440,30 @@ class ActionHandler
     public function getCSRFToken()
     {
         // retrieve earlier generated token from the session stack
-        $token = SessionManager::getInstance()->globalStackVar('ATK_CSRF_TOKEN');
+        $token = $this->sessionManager->globalStackVar('ATK_CSRF_TOKEN');
         if ($token != null) {
             return $token;
         }
 
         // generate and store token in sesion stack
         $token = md5(uniqid(rand(), true));
-        SessionManager::getInstance()->globalStackVar('ATK_CSRF_TOKEN', $token);
+        $this->sessionManager->globalStackVar('ATK_CSRF_TOKEN', $token);
 
         return $token;
+    }
+
+    /**
+     * Modify grid.
+     *
+     * @param DataGrid $grid grid
+     * @param int $mode CREATE or RESUME
+     */
+    protected function modifyDataGrid(DataGrid $grid, $mode)
+    {
+        $method = 'modifyDataGrid';
+        if (method_exists($this->getNode(), $method)) {
+            $this->getNode()->$method($grid, $mode);
+        }
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Sintattica\Atk\Handlers;
 
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Db\Db;
 use Sintattica\Atk\RecordList\CustomRecordList;
 use Sintattica\Atk\Core\Tools;
@@ -26,8 +27,6 @@ class ExportHandler extends ActionHandler
      */
     public function action_export()
     {
-        global $ATK_VARS;
-
         // Intercept partial call
         if (!empty($this->m_partial)) {
             $this->partial($this->m_partial);
@@ -43,8 +42,8 @@ class ExportHandler extends ActionHandler
         }
 
         //need to keep the postdata after a Attribute::AF_LARGE selection in the allfield
-        if (!isset($this->m_postvars['phase']) && isset($ATK_VARS['atkformdata'])) {
-            foreach ($ATK_VARS['atkformdata'] as $key => $value) {
+        if (!isset($this->m_postvars['phase']) && isset(Atk::$ATK_VARS['atkformdata'])) {
+            foreach (Atk::$ATK_VARS['atkformdata'] as $key => $value) {
                 $this->m_postvars[$key] = $value;
             }
         }
@@ -82,14 +81,14 @@ class ExportHandler extends ActionHandler
           {
             fieldval = $( 'export_selection_options' ).value;
           }
-          new Ajax.Updater('export_attributes', '".Tools::partial_url($this->m_postvars['atknodeuri'], 'export', 'export')."exportvalue='+fieldval+'&' );
+          new Ajax.Updater('export_attributes', '".$this->sessionManager->partial_url($this->m_postvars['atknodeuri'], 'export', 'export')."exportvalue='+fieldval+'&' );
 
           if( fieldval != 'none' )
           {
             if( fieldval != 'new' )
             {
-              new Ajax.Updater('selection_interact', '".Tools::partial_url($this->m_postvars['atknodeuri'], 'export', 'selection_interact')."exportvalue='+fieldval+'&' );
-              new Ajax.Updater('export_name', '".Tools::partial_url($this->m_postvars['atknodeuri'], 'export', 'selection_name')."exportvalue='+fieldval+'&' );
+              new Ajax.Updater('selection_interact', '".$this->sessionManager->partial_url($this->m_postvars['atknodeuri'], 'export', 'selection_interact')."exportvalue='+fieldval+'&' );
+              new Ajax.Updater('export_name', '".$this->sessionManager->partial_url($this->m_postvars['atknodeuri'], 'export', 'selection_name')."exportvalue='+fieldval+'&' );
               $( 'selection_interact' ).style.display='';
               $( 'export_name' ).style.display='';
               $( 'export_save_button' ).style.display='';
@@ -157,7 +156,7 @@ class ExportHandler extends ActionHandler
         $value = '';
 
         if ($selected) {
-            $db = Db::getInstance();
+            $db = $this->getNode()->getDb();
             $rows = $db->getRows('SELECT name FROM atk_exportcriteria WHERE id = '.(int)$selected);
             if (count($rows) == 1) {
                 $value = htmlentities($rows[0]['name']);
@@ -195,13 +194,13 @@ class ExportHandler extends ActionHandler
     public function _getInitHtml()
     {
         $action = Tools::dispatch_url($this->m_node->m_module.'.'.$this->m_node->m_type, 'export');
-        $sm = SessionManager::getInstance();
+        $sm = $this->sessionManager;
 
         $params = [];
         $params['formstart'] = '<form name="entryform" enctype="multipart/form-data" action="'.$action.'" method="post" class="form-horizontal">';
         $params['formstart'] .= $sm->formState();
         $params['formstart'] .= '<input type="hidden" name="phase" value="process"/>';
-        $params['buttons'][] = Tools::atkButton(Tools::atktext('cancel', 'atk'), '', SessionManager::SESSION_BACK, true);
+        $params['buttons'][] = $this->sessionManager->button(Tools::atktext('cancel', 'atk'), '', $this->sessionManager::SESSION_BACK, true);
         $params['buttons'][] = '<input class="btn" type="submit" value="'.Tools::atktext('export', 'atk').'"/>';
         $params['buttons'][] = '<input id="export_save_button" style="display:none;" value="'.Tools::atktext('save_export_selection',
                 'atk').'" name="save_export" class="btn" type="submit" /> ';
@@ -209,7 +208,7 @@ class ExportHandler extends ActionHandler
         $params['content'] .= $this->_getOptions();
         $params['formend'] = '</form>';
 
-        return Ui::getInstance()->renderAction('export', $params, $this->m_node->m_module);
+        return $this->getUi()->renderAction('export', $params, $this->m_node->m_module);
     }
 
     /**
@@ -338,7 +337,7 @@ class ExportHandler extends ActionHandler
      */
     private function saveSelection()
     {
-        $db = Db::getInstance();
+        $db = $this->getNode()->getDb();
         $id = $db->nextid('exportcriteria');
 
         $user_id = 0;
@@ -368,7 +367,7 @@ class ExportHandler extends ActionHandler
      */
     private function updateSelection()
     {
-        $db = Db::getInstance();
+        $db = $this->getNode()->getDb();
 
         $user_id = 0;
         if ('none' !== strtolower(Config::getGlobal('authentication'))) {
@@ -404,7 +403,7 @@ class ExportHandler extends ActionHandler
      */
     private function deleteSelection($id)
     {
-        $db = Db::getInstance();
+        $db = $this->getNode()->getDb();
         $db->query('DELETE FROM atk_exportcriteria WHERE id = '.(int)$id);
     }
 
@@ -423,7 +422,7 @@ class ExportHandler extends ActionHandler
             }
         }
 
-        $db = Db::getInstance();
+        $db = $this->getNode()->getDb();
 
         return $db->getRows($query = 'SELECT id, name FROM atk_exportcriteria WHERE '.$where.' ORDER BY name');
     }
@@ -473,7 +472,7 @@ class ExportHandler extends ActionHandler
 
         $criteria = [];
         if (!in_array($value, array('new', 'none', ''))) {
-            $db = Db::getInstance();
+            $db = $this->getNode()->getDb();
             $rows = $db->getRows('SELECT * FROM atk_exportcriteria WHERE id = '.(int)$value);
             $criteria = unserialize($rows[0]['criteria']);
         }
@@ -547,8 +546,8 @@ class ExportHandler extends ActionHandler
                 $list_includes[] = substr($name, strlen('export_'));
             }
         }
-        $sm = SessionManager::getInstance();
-        $sessionData = &SessionManager::getSession();
+        $sm = $this->sessionManager;
+        $sessionData = &$sm->getSession();
         $session_back = $sessionData['default']['stack'][$sm->atkStackID()][$sm->atkLevel() - 1];
         $atkorderby = $session_back['atkorderby'];
 

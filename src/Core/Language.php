@@ -4,6 +4,7 @@ namespace Sintattica\Atk\Core;
 
 use Sintattica\Atk\Security\SecurityManager;
 use Sintattica\Atk\Session\SessionManager;
+use Sintattica\Atk\Utils\Debugger;
 
 /**
  * Class that handles user interface internationalization.
@@ -73,12 +74,28 @@ class Language
      */
     public $m_customStrings = [];
 
+    
+    protected $debugger;
+    protected $moduleManager;
+    
     /**
      * Default Constructor.
+     * @param Debugger $debugger
      */
-    public function __construct()
+    public function __construct(Debugger $debugger)
     {
-        Tools::atkdebug('New instance made of atkLanguage');
+        $debugger->addDebug('New Language instance');
+        self::$s_instance = $this;
+
+        $this->debugger = $debugger;
+
+    }
+
+    public function setModuleManager(ModuleManager $moduleManager)
+    {
+        if(!$this->moduleManager) {
+            $this->moduleManager = $moduleManager;
+        }
     }
 
     /**
@@ -91,10 +108,6 @@ class Language
      */
     public static function getInstance()
     {
-        if (self::$s_instance == null) {
-            self::$s_instance = new self();
-        }
-
         return self::$s_instance;
     }
 
@@ -135,8 +148,7 @@ class Language
             $modules = [];
 
             if ($modulefallback || Config::getGlobal('language_modulefallback', false)) {
-                $atk = Atk::getInstance();
-                foreach ($atk->g_modules as $modname => $modpath) {
+                foreach ($this->moduleManager->atkGetModules() as $modname => $modpath) {
                     $modules[] = $modname;
                 }
             }
@@ -242,10 +254,8 @@ class Language
      */
     public static function getLanguage()
     {
-        global $ATK_VARS;
-
-        if (isset($ATK_VARS['atklng']) && in_array($ATK_VARS['atklng'], self::getSupportedLanguages())) {
-            $lng = $ATK_VARS['atklng'];
+        if (isset(Atk::$ATK_VARS['atklng']) && in_array(Atk::$ATK_VARS['atklng'], self::getSupportedLanguages())) {
+            $lng = Atk::$ATK_VARS['atklng'];
         } else {
             $lng = self::getUserLanguage();
         }
@@ -264,8 +274,7 @@ class Language
      */
     public static function setLanguage($lng)
     {
-        global $ATK_VARS;
-        $ATK_VARS['atklng'] = $lng;
+        Atk::$ATK_VARS['atklng'] = $lng;
     }
 
     /**
@@ -442,7 +451,7 @@ class Language
 
         if (!$nodefaulttext) {
             if (Config::getGlobal('debug_translations', false)) {
-                Tools::atkdebug("atkLanguage: translation for '$key' with module: '$module' and node: '$node' and language: '$lng' not found, returning default text");
+                $this->debugger->addDebug("atkLanguage: translation for '$key' with module: '$module' and node: '$node' and language: '$lng' not found, returning default text");
             }
 
             // Still nothing found. return default string
@@ -517,8 +526,7 @@ class Language
             if ($moduleName == 'langoverrides') {
                 $path = Config::getGlobal('language_basedir', $this->LANGDIR);
             } else {
-                $atk = Atk::getInstance();
-                $path = $atk->moduleDir($moduleName).$this->LANGDIR;
+                $path = $this->moduleManager->moduleDir($moduleName).$this->LANGDIR;
             }
         }
 
@@ -574,5 +582,17 @@ class Language
             $this->m_customStrings[$lng] = [];
         }
         $this->m_customStrings[$lng][$code] = $text;
+    }
+
+    public function trans(
+        $string,
+        $module = '',
+        $node = '',
+        $lng = '',
+        $firstfallback = '',
+        $nodefaulttext = false,
+        $modulefallback = false
+    ) {
+        return $this->text($string, $module, $node, $lng, $firstfallback, $nodefaulttext, $modulefallback);
     }
 }

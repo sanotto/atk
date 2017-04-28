@@ -60,7 +60,7 @@ abstract class AbstractSearchHandler extends ActionHandler
         $db = $this->m_node->getDb();
         $this->m_table_exists = $db->tableExists($this->m_table);
 
-        Tools::atkdebug('tableExists checking table: '.$this->m_table.' exists : '.print_r($this->m_table_exists, true));
+        $this->debugger->addDebug('tableExists checking table: '.$this->m_table.' exists : '.print_r($this->m_table_exists, true));
 
         return $this->m_table_exists;
     }
@@ -261,10 +261,10 @@ abstract class AbstractSearchHandler extends ActionHandler
         if (empty($current) || $this->loadCriteria($current) == null) {
             return;
         } else {
-            $sm = SessionManager::getInstance();
+            $sm = $this->sessionManager;
 
             return $sm->sessionUrl(Tools::dispatch_url($this->m_node->atkNodeUri(), $this->m_action, array('forget_criteria' => $current)),
-                SessionManager::SESSION_REPLACE);
+                $this->sessionManager::SESSION_REPLACE);
         }
     }
 

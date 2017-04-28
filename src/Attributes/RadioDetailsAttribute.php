@@ -92,7 +92,7 @@ class RadioDetailsAttribute extends Attribute
             $attrNames = @$this->m_details[$value];
 
             if ($attrNames != null) {
-                $url = Tools::partial_url($this->getOwnerInstance()->atkNodeUri(), $mode, 'attribute.'.$this->fieldName().'.details',
+                $url = $this->getOwnerInstance()->getSessionManager()->partial_url($this->getOwnerInstance()->atkNodeUri(), $mode, 'attribute.'.$this->fieldName().'.details',
                     array('value' => $value, 'fieldprefix' => $fieldprefix));
                 $onChange = "ATK.RadioDetailsAttribute.select(this, '{$url}');";
             } else {

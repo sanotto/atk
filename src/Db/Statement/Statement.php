@@ -21,7 +21,7 @@ use Sintattica\Atk\Core\Tools;
  * To create an instance please use the Db::prepare($query) method.
  *
  * Example:
- * $stmt = Db::getInstance()->prepare("SELECT COUNT(*) FROM people WHERE birthday > :birthday");
+ * $stmt = $db->prepare("SELECT COUNT(*) FROM people WHERE birthday > :birthday");
  * $stmt->execute(array('birthday' => '1985-09-20'));
  * foreach ($stmt as $person)
  * {
@@ -79,6 +79,8 @@ abstract class Statement implements IteratorAggregate
     public $error;
 
     public $m_db;
+
+    private $isClosed = false;
 
     /**
      * Constructs a new statement for the given query.
@@ -222,10 +224,13 @@ abstract class Statement implements IteratorAggregate
      */
     public function close()
     {
-        $this->m_position = false;
-        $this->m_latestParams = null;
-        $this->_reset();
-        $this->_close();
+        if(!$this->isClosed) {
+            $this->m_position = false;
+            $this->m_latestParams = null;
+            $this->_reset();
+            $this->_close();
+            $this->isClosed = true;
+        }
     }
 
     /**

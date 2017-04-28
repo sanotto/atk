@@ -10,6 +10,15 @@ use Sintattica\Atk\Security\SecurityManager;
  */
 class NoneAuth extends AuthInterface
 {
+
+    protected $securityManager;
+
+    public function __construct(SecurityManager $securityManager)
+    {
+        $this->securityManager = $securityManager;
+    }
+
+
     public function validateUser($user, $passwd)
     {
         return SecurityManager::AUTH_SUCCESS;
@@ -22,7 +31,6 @@ class NoneAuth extends AuthInterface
 
     public function getUser($user)
     {
-        $sm = SecurityManager::getInstance();
-        return $sm->getSystemUser('administrator');
+        return $this->securityManager->getSystemUser('administrator');
     }
 }

@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Attributes;
 
 use Exception;
+use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Config;
 use Sintattica\Atk\Core\Node;
 use Sintattica\Atk\Core\Tools;
@@ -10,7 +11,6 @@ use Sintattica\Atk\DataGrid\DataGrid;
 use Sintattica\Atk\Db\Db;
 use Sintattica\Atk\Db\Query;
 use Sintattica\Atk\RecordList\ColumnConfig;
-use Sintattica\Atk\Ui\Page;
 use Sintattica\Atk\Utils\EditFormModifier;
 use Sintattica\Atk\Utils\Json;
 
@@ -232,7 +232,7 @@ class Attribute
     const AF_NO_FILTER = 2097152;
 
     /**
-     * Parent field for parent child relations (treeview).
+     * UNUSED (was used by the Tree, maybe we could recycle this flag for other things)
      *
      * miscellaneous processing flag
      */
@@ -999,7 +999,7 @@ class Attribute
     public function _renderChangeHandler($fieldprefix, $elementNr = '')
     {
         if (count($this->m_onchangecode)) {
-            $page = Page::getInstance();
+            $page = $this->getOwnerInstance()->getPage();
             $page->register_scriptcode('
     function '.$this->getHtmlId($fieldprefix).$elementNr."_onChange(el)
     {
@@ -1035,7 +1035,7 @@ class Attribute
 
             return $result;
         } else {
-            Tools::atkdebug('Warning attribute '.$this->m_name.' has no proper hide method!');
+            $this->getOwnerInstance()->getDebugger()->addDebug('Warning attribute '.$this->m_name.' has no proper hide method!');
         }
 
         return '';
@@ -1150,9 +1150,6 @@ class Attribute
                 $arr['hide'][] = $this->hide($defaults, $fieldprefix, $mode);
             }
         } /* edit */ else {
-            global $ATK_VARS;
-
-
             $entry = array(
                 'name' => $this->m_name,
                 'obligatory' => $this->hasFlag(self::AF_OBLIGATORY),
@@ -1166,7 +1163,7 @@ class Attribute
             /* label? */
             $entry['label'] = $this->getLabel($defaults, $mode);
             /* error? */
-            $entry['error'] = $this->getError($error) || (isset($ATK_VARS['atkerrorfields']) && Tools::atk_in_array($entry['id'], $ATK_VARS['atkerrorfields']));
+            $entry['error'] = $this->getError($error) || (isset(Atk::$ATK_VARS['atkerrorfields']) && Tools::atk_in_array($entry['id'], Atk::$ATK_VARS['atkerrorfields']));
             // on which tab?
             $entry['tabs'] = $this->getTabs();
             //on which sections?
@@ -1624,7 +1621,7 @@ class Attribute
 
             $field .= '</select>';
         } else {
-            $field = '<input type="hidden" name="'.$this->getSearchModeFieldname($fieldprefix).'" value="'.$searchMode.'">'.($extended ? Tools::atktext('search_'.$searchMode) : '');
+            $field = '<input type="hidden" name="'.$this->getSearchModeFieldname($fieldprefix).'" value="'.$searchMode.'">'.($extended ? $this->getOwnerInstance()->getLanguage()->trans('search_'.$searchMode) : '');
         }
 
         return $field;
@@ -1730,7 +1727,7 @@ class Attribute
         if (method_exists($query, $func) && ($value || ($value == 0))) {
             return $query->$func($table.'.'.$this->fieldName(), $this->escapeSQL($value), $this->dbFieldType());
         } elseif (!method_exists($query, $func)) {
-            Tools::atkdebug("Database doesn't support searchmode '$searchmode' for ".$this->fieldName().', ignoring condition.');
+            $this->getOwnerInstance()->getDebugger()->addDebug("Database doesn't support searchmode '$searchmode' for ".$this->fieldName().', ignoring condition.');
         }
 
         return '';
@@ -2702,8 +2699,8 @@ class Attribute
             // if we are not the sumcolumn itself, but there are totalcolumns present, we can perform subtotalling
             $cmd = ($columnConfig->hasSubTotal($this->fieldName()) ? 'unsubtotal' : 'subtotal');
             if ($grid == null) {
-                return Tools::href(Config::getGlobal('dispatcher').'?'.$columnConfig->getUrlCommand($this->fieldName(), $cmd),
-                        Tools::atktext('column_'.$cmd)).' ';
+                return $this->getOwnerInstance()->getSessionManager()->href(Config::getGlobal('dispatcher').'?'.$columnConfig->getUrlCommand($this->fieldName(), $cmd),
+                        $this->getOwnerInstance()->getLanguage()->trans('column_'.$cmd)).' ';
             } else {
                 $call = $grid->getUpdateCall($columnConfig->getUrlCommandParams($this->fieldName(), $cmd));
 
@@ -2735,8 +2732,8 @@ class Attribute
         if ($currentOrder > 0) {
             $direction = ($columnConfig->getSortDirection($this->fieldName()) == 'desc' ? 'asc' : 'desc');
             if ($grid == null) {
-                $res = Tools::href(Config::getGlobal('dispatcher').'?'.$columnConfig->getUrlCommand($fieldname, $direction),
-                        Tools::atktext('column_'.$direction)).' ';
+                $res = $this->getOwnerInstance()->getSessionManager()->href(Config::getGlobal('dispatcher').'?'.$columnConfig->getUrlCommand($fieldname, $direction),
+                        $this->getOwnerInstance()->getLanguage()->trans('column_'.$direction)).' ';
             } else {
                 $call = $grid->getUpdateCall($columnConfig->getUrlCommandParams($fieldname, $direction));
                 $res = '<a href="javascript:void(0)" onclick="'.htmlentities($call).'">'.$this->text('column_'.$direction).'</a>';
@@ -2833,7 +2830,7 @@ class Attribute
         if (is_object($this->getOwnerInstance())) {
             return $this->getOwnerInstance()->text($string, null, '', '', !$fallback);
         } else {
-            return Tools::atktext($string, $this->getModule(), '', '', '', !$fallback);
+            return $this->getOwnerInstance()->getLanguage()->trans($string, $this->getModule(), '', '', '', !$fallback);
         }
     }
 
@@ -2849,8 +2846,6 @@ class Attribute
         if (is_object($this->getOwnerInstance())) {
             return $this->getOwnerInstance()->getDb();
         }
-
-        return Db::getInstance();
     }
 
     /**
@@ -2966,7 +2961,7 @@ class Attribute
             $action = $mode == 'add' ? 'add' : 'edit';
         }
 
-        $url = Tools::partial_url($this->getOwnerInstance()->atkNodeUri(), $action, 'attribute.'.$this->fieldName().'.dependencies',
+        $url = $this->getOwnerInstance()->getSessionManager()->partial_url($this->getOwnerInstance()->atkNodeUri(), $action, 'attribute.'.$this->fieldName().'.dependencies',
             array('atkdata' => array('fieldPrefix' => $fieldPrefix, 'mode' => $mode)));
         $url = Json::encode($url);
 

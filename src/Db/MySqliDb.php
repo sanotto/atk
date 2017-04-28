@@ -31,14 +31,11 @@ class MySqliDb extends Db
 
     /**
      * Base constructor.
+     * @param Debugger $debugger
      */
-    public function __construct()
+    public function __construct(Debugger $debugger)
     {
-        if (!function_exists('mysqli_connect')) {
-            trigger_error('MySQLi not supported by your PHP version', E_USER_ERROR);
-        }
-
-        parent::__construct();
+        parent::__construct($debugger);
 
         // set type
         $this->m_type = 'MySqli';
@@ -74,7 +71,7 @@ class MySqliDb extends Db
 
             /* set character set */
             if (!empty($charset)) {
-                Tools::atkdebug("Set database character set to: {$charset}");
+                $this->debugger->addDebug("Set database character set to: {$charset}");
                 $this->_query("SET NAMES '{$charset}'", true);
             }
 
@@ -123,7 +120,7 @@ class MySqliDb extends Db
             case 2005:
                 return self::DB_UNKNOWNHOST;
             default:
-                Tools::atkdebug('mysqldb::translateError -> MySQL Error: '.$this->m_errno.' -> '.$this->m_error);
+                $this->debugger->addDebug('mysqldb::translateError -> MySQL Error: '.$this->m_errno.' -> '.$this->m_error);
 
                 return self::DB_UNKNOWNERROR;
         }
@@ -149,7 +146,7 @@ class MySqliDb extends Db
     public function disconnect()
     {
         if ($this->m_link_id) {
-            Tools::atkdebug('Disconnecting from database...');
+            $this->debugger->addDebug('Disconnecting from database...');
             @mysqli_close($this->m_link_id);
             $this->m_link_id = 0;
         }
@@ -256,7 +253,7 @@ class MySqliDb extends Db
     protected function _query($query, $isSystemQuery)
     {
         if (Config::getGlobal('debug') >= 0) {
-            Debugger::addQuery($query, $isSystemQuery);
+            $this->debugger->addQuery($query, $isSystemQuery);
         }
 
         return @mysqli_query($this->m_link_id, $query);
@@ -276,7 +273,7 @@ class MySqliDb extends Db
         }
 
         foreach ($warnings as $warning) {
-            Tools::atkwarning("MYSQL warning '{$warning['Level']}' (Code: {$warning['Code']}): {$warning['Message']}");
+            $this->debugger->addWarning("MYSQL warning '{$warning['Level']}' (Code: {$warning['Code']}): {$warning['Message']}");
         }
     }
 
@@ -296,7 +293,7 @@ class MySqliDb extends Db
         preg_match("/\'(.*)\'/U", $error, $matches);
 
         if (is_array($matches) && sizeof($matches) == 2) {
-            Tools::atkdebug("<b>Fallback feature called because error '1100' occured during the last query. Running query again using table lock for table '{$matches[1]}'.</b>");
+            $this->debugger->addDebug("<b>Fallback feature called because error '1100' occured during the last query. Running query again using table lock for table '{$matches[1]}'.</b>");
             $table = $matches[1];
 
             if ($this->m_query_id) {
@@ -372,7 +369,7 @@ class MySqliDb extends Db
             $query = "LOCK TABLES $table $mode";
 
             if (Config::getGlobal('debug') >= 0) {
-                Debugger::addQuery($query);
+                $this->debugger->addQuery($query);
             }
 
             $result = $this->_query($query, true);
@@ -398,7 +395,7 @@ class MySqliDb extends Db
         /* connect first */
         if ($this->connect() == self::DB_SUCCESS) {
             /* unlock */
-            Tools::atkdebug('unlock tables');
+            $this->debugger->addDebug('unlock tables');
             $result = $this->_query('UNLOCK TABLES', true);
             if (!$result) {
                 $this->halt('unlock tables failed.');
@@ -519,7 +516,7 @@ class MySqliDb extends Db
         }
 
         $result = @mysqli_num_rows($id) > 0;
-        Tools::atkdebug("Table exists? $table => ".($result ? 'yes' : 'no'));
+        $this->debugger->addDebug("Table exists? $table => ".($result ? 'yes' : 'no'));
 
         return $result;
     }
@@ -602,7 +599,7 @@ class MySqliDb extends Db
         $id = $this->_query("SHOW TABLE STATUS LIKE '".$table."'", true);
         $status = @mysqli_fetch_array($id, MYSQLI_ASSOC);
         $result = $status != null && isset($status['Engine']) ? $status['Engine'] : null;
-        Tools::atkdebug("Table type? $table => $result");
+        $this->debugger->addDebug("Table type? $table => $result");
 
         return $result;
     }
@@ -622,7 +619,7 @@ class MySqliDb extends Db
             $ddl = Ddl::create('MySqli');
 
             /* list fields */
-            Tools::atkdebug("Retrieving metadata for $table");
+            $this->debugger->addDebug("Retrieving metadata for $table");
 
             /* The tablename may also contain a schema. If so we check for it. */
             if (strpos($table, '.') !== false) {
@@ -639,7 +636,7 @@ class MySqliDb extends Db
             $tableType = $this->_getTableType(isset($tablename) ? $tablename : $table);
 
             if (!$id) {
-                Tools::atkdebug('Metadata query failed.');
+                $this->debugger->addDebug('Metadata query failed.');
 
                 return [];
             }
@@ -694,7 +691,7 @@ class MySqliDb extends Db
 
             mysqli_free_result($id);
 
-            Tools::atkdebug("Metadata for $table complete");
+            $this->debugger->addDebug("Metadata for $table complete");
 
             return $result;
         }
@@ -739,7 +736,7 @@ class MySqliDb extends Db
     public function commit()
     {
         if ($this->m_link_id) {
-            Tools::atkdebug('Commit');
+            $this->debugger->addDebug('Commit');
             mysqli_commit($this->m_link_id);
         }
 
@@ -753,7 +750,7 @@ class MySqliDb extends Db
      */
     public function savepoint($name)
     {
-        Tools::atkdebug(get_class($this)."::savepoint $name");
+        $this->debugger->addDebug(get_class($this)."::savepoint $name");
         $this->query('SAVEPOINT '.$name);
     }
 
@@ -768,10 +765,10 @@ class MySqliDb extends Db
     {
         if ($this->m_link_id) {
             if (!empty($savepoint)) {
-                Tools::atkdebug(get_class($this)."::rollback (rollback to savepoint $savepoint)");
+                $this->debugger->addDebug(get_class($this)."::rollback (rollback to savepoint $savepoint)");
                 $this->query('ROLLBACK TO SAVEPOINT '.$savepoint);
             } else {
-                Tools::atkdebug('Rollback');
+                $this->debugger->addDebug('Rollback');
                 mysqli_rollback($this->m_link_id);
             }
         }

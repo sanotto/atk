@@ -3,7 +3,7 @@
 namespace Sintattica\Atk\Attributes;
 
 use Sintattica\Atk\Core\Tools;
-use Sintattica\Atk\Core\Language;
+use Sintattica\Atk\Errors\AtkErrorException;
 
 /**
  * The CountryAttribute class represents an attribute to handle ISO Countries in a listbox.
@@ -307,6 +307,8 @@ class CountryAttribute extends ListAttribute
     public $m_custom_countries = [];
     public $m_defaulttocurrent = true;
 
+    protected $_switch;
+
     /**
      * Constructor.
      *
@@ -338,21 +340,28 @@ class CountryAttribute extends ListAttribute
             $valueArray = $optionArray;
         }
 
+        $this->_switch = $switch;
+
+        $this->m_defaulttocurrent = $defaultToCurrent;
+        parent::__construct($name, $flags, $optionArray, $valueArray);
+    }
+
+    public function init()
+    {
         // When switch is not user get country options
-        if ($switch != 'user') {
-            if ($switch == 'world') {
+        if ($this->_switch != 'user') {
+            if ($this->_switch == 'world') {
                 $this->fillWorldCountriesArray();
             } else {
                 $this->fillCountriesArray();
             }
 
-            $optionArray = $this->getCountryOptionArray($switch);
-            $valueArray = $this->getCountryValueArray($switch);
+            $optionArray = $this->getCountryOptionArray($this->_switch);
+            $valueArray = $this->getCountryValueArray($this->_switch);
+            $this->setOptions($optionArray, $valueArray);
         }
-
-        $this->m_defaulttocurrent = $defaultToCurrent;
-        parent::__construct($name, $flags, $optionArray, $valueArray);
     }
+
 
     /**
      * With this function you can set the "custom" list with a array of country ISO codes
@@ -370,14 +379,12 @@ class CountryAttribute extends ListAttribute
             if (in_array($countryIso, $this->m_world_countries)) {
                 array_push($custom_list, $countryIso);
             } else {
-                Tools::atkwarning('atkCountryAttribute: setList: '.$countryIso.' is a unknown country and will be ignored');
+                $this->getOwnerInstance()->getDebugger()->addWarning('atkCountryAttribute: setList: '.$countryIso.' is a unknown country and will be ignored');
             }
         }
 
         if (count($custom_list) == 0) {
-            Tools::atkerror('atkCountryAttribute: setList: empty custom country list');
-
-            return false;
+            throw new AtkErrorException('CountryAttribute: setList: empty custom country list');
         }
 
         $this->m_custom_countries = $custom_list;
@@ -399,7 +406,7 @@ class CountryAttribute extends ListAttribute
     public function edit($record, $fieldprefix, $mode)
     {
         if ($this->m_defaulttocurrent && !$record[$this->fieldName()]) {
-            $record[$this->fieldName()] = strtoupper(Language::getLanguage());
+            $record[$this->fieldName()] = strtoupper($this->getOwnerInstance()->getLanguage()::getLanguage());
         }
 
         return parent::edit($record, $fieldprefix, $mode);
@@ -483,9 +490,9 @@ class CountryAttribute extends ListAttribute
      */
     public function getCountryOption($iso_code)
     {
-        $lng = Language::getLanguage();
+        $lng = $this->getOwnerInstance()->getLanguage()::getLanguage();
         if (!array_key_exists($iso_code, $this->m_country)) {
-            Tools::atkdebug('UNKNOWN ISO CODE: '.$iso_code);
+            $this->getOwnerInstance()->getDebugger()->addDebug('UNKNOWN ISO CODE: '.$iso_code);
         }
         if (array_key_exists($lng, $this->m_country[$iso_code])) {
             return $this->m_country[$iso_code][$lng];

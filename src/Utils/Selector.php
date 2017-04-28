@@ -557,7 +557,9 @@ class Selector implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     protected function _buildQuery(array $attrsByLoadType)
     {
-        $query = $this->_getNode()->getDb()->createQuery();
+        $node = $this->_getNode();
+        $db = $node->getDb();
+        $query = $db->createQuery();
         $query->setDistinct($this->m_distinct);
         $query->addTable($this->_getNode()->getTable());
 

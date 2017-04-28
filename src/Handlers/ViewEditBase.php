@@ -2,6 +2,7 @@
 
 namespace Sintattica\Atk\Handlers;
 
+use Sintattica\Atk\Errors\AtkErrorException;
 use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Session\State;
@@ -43,11 +44,7 @@ class ViewEditBase extends ActionHandler
         $record = $this->getRejectInfo(); // Check reject info first
 
         if ($record == null) { // If reject info not set -  do select
-            $atkstoretype = '';
-            $sessionmanager = SessionManager::getInstance();
-            if ($sessionmanager) {
-                $atkstoretype = $sessionmanager->stackVar('atkstore');
-            }
+            $atkstoretype = $this->sessionManager->stackVar('atkstore');
             switch ($atkstoretype) {
                 case 'session':
                     $record = $this->getRecordFromSession();
@@ -141,7 +138,7 @@ class ViewEditBase extends ActionHandler
         list($tab, $section) = explode('.', $field['name']);
         $name = "section_{$tab}_{$section}";
 
-        $url = Tools::partial_url($this->m_node->atkNodeUri(), $mode, 'sectionstate', array('atksectionname' => $name));
+        $url = $this->sessionManager->partial_url($this->m_node->atkNodeUri(), $mode, 'sectionstate', array('atksectionname' => $name));
 
         // create onclick statement.
         $onClick = " onClick=\"javascript:ATK.Tabs.handleSectionToggle(this,null,'{$url}'); return false;\"";
@@ -302,6 +299,7 @@ class ViewEditBase extends ActionHandler
      * Attribute handler.
      *
      * @param string $partial full partial
+     * @throws AtkErrorException
      */
     public function partial_attribute($partial)
     {
@@ -309,9 +307,7 @@ class ViewEditBase extends ActionHandler
 
         $attr = $this->m_node->getAttribute($attribute);
         if ($attr == null) {
-            Tools::atkerror("Unknown / invalid attribute '$attribute' for node '".$this->m_node->atkNodeUri()."'");
-
-            return '';
+            throw new AtkErrorException("Unknown / invalid attribute '$attribute' for node '".$this->m_node->atkNodeUri()."'");
         }
 
         return $attr->partial($partial, $this->m_action);

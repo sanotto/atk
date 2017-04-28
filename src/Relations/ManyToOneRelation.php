@@ -11,9 +11,9 @@ use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\DataGrid\DataGrid;
 use Sintattica\Atk\Db\Db;
 use Sintattica\Atk\Db\Query;
+use Sintattica\Atk\Errors\AtkErrorException;
 use Sintattica\Atk\RecordList\ColumnConfig;
 use Sintattica\Atk\Session\SessionManager;
-use Sintattica\Atk\Ui\Page;
 use Sintattica\Atk\Utils\StringParser;
 
 /**
@@ -241,6 +241,7 @@ class ManyToOneRelation extends Relation
      * @param int $flags Flags for the relation
      *
      * @param string $destination The node we have a relationship with.
+     * @throws AtkErrorException
      *
      */
     public function __construct($name, $flags = 0, $destination)
@@ -275,7 +276,7 @@ class ManyToOneRelation extends Relation
         }
 
         if ($this->hasFlag(self::AF_MANYTOONE_LAZY) && (count($this->m_refKey) > 1 || $this->m_refKey[0] != $this->fieldName())) {
-            Tools::atkerror('self::AF_MANYTOONE_LAZY flag is not supported for multi-column reference key or a reference key that uses another column.');
+            throw new AtkErrorException('self::AF_MANYTOONE_LAZY flag is not supported for multi-column reference key or a reference key that uses another column.');
         }
     }
 
@@ -493,7 +494,7 @@ class ManyToOneRelation extends Relation
     public function value2db($rec)
     {
         if ($this->isEmpty($rec)) {
-            Tools::atkdebug($this->fieldName().' IS EMPTY!');
+            $this->getOwnerInstance()->getDebugger()->addDebug($this->fieldName().' IS EMPTY!');
 
             return;
         } else {
@@ -572,7 +573,7 @@ class ManyToOneRelation extends Relation
                         if ($attr) {
                             $result[$attrName] = $attr->db2value($myrec);
                         } else {
-                            Tools::atkerror("m_attribList['{$attrName}'] not defined");
+                            throw new AtkErrorException("m_attribList['{$attrName}'] not defined");
                         }
                     }
                 }
@@ -626,9 +627,9 @@ class ManyToOneRelation extends Relation
             $modulename = $this->m_destInstance->m_module;
             $ownermodulename = $this->m_ownerInstance->m_module;
         }
-        $label = Tools::atktext($this->fieldName().'_'.$text_key, $ownermodulename, $this->m_owner, '', '', true);
+        $label = $this->getOwnerInstance()->getLanguage()->trans($this->fieldName().'_'.$text_key, $ownermodulename, $this->m_owner, '', '', true);
         if ($label == '') {
-            $label = Tools::atktext($text_key, $modulename, $nodename);
+            $label = $this->getOwnerInstance()->getLanguage()->trans($text_key, $modulename, $nodename);
         }
 
         return $label;
@@ -651,10 +652,10 @@ class ManyToOneRelation extends Relation
                             ['atkfilter' => '', 'atkselector' => $this->m_destInstance->primaryKey($record[$this->fieldName()])]);
 
                         if ($mode != 'list') {
-                            $result .= ' '.Tools::href($url, Tools::atktext('view'), SessionManager::SESSION_NESTED, $saveForm,
+                            $result .= ' '.$this->getOwnerInstance()->getSessionManager()->href($url, $this->getOwnerInstance()->getLanguage()->trans('view'), SessionManager::SESSION_NESTED, $saveForm,
                                     'class="atkmanytoonerelation-link"');
                         } else {
-                            $result = Tools::href($url, $result, SessionManager::SESSION_NESTED, $saveForm);
+                            $result = $this->getOwnerInstance()->getSessionManager()->href($url, $result, SessionManager::SESSION_NESTED, $saveForm);
                         }
 
                     }
@@ -665,7 +666,7 @@ class ManyToOneRelation extends Relation
 
             return $result;
         } else {
-            Tools::atkdebug("Can't create destination! ($this -> m_destination");
+            $this->getOwnerInstance()->getDebugger()->addDebug("Can't create destination! ($this -> m_destination");
         }
 
         return '';
@@ -683,7 +684,7 @@ class ManyToOneRelation extends Relation
             return;
         }
 
-        Tools::atkdebug('Delayed loading of '.($fullOrFields || is_array($fullOrFields) ? '' : 'descriptor ').'fields for '.$this->m_name);
+        $this->getOwnerInstance()->getDebugger()->addDebug('Delayed loading of '.($fullOrFields || is_array($fullOrFields) ? '' : 'descriptor ').'fields for '.$this->m_name);
         $this->createDestination();
 
         $includes = '';
@@ -716,13 +717,13 @@ class ManyToOneRelation extends Relation
         $filter = $this->parseFilter($this->m_destinationFilter, $record);
         $links[] = $this->_getSelectLink($id, $filter);
         if ($this->hasFlag(self::AF_RELATION_AUTOLINK)) { // auto edit/view link
-            $sm = SessionManager::getInstance();
+            $sm = $this->getOwnerInstance()->getSessionManager();
 
             if ($this->m_destInstance->allowed('add') && !$this->m_destInstance->hasFlag(Node::NF_NO_ADD)) {
-                $links[] = Tools::href(Tools::dispatch_url($this->getAutoLinkDestination(), 'add', array(
+                $links[] = $this->getOwnerInstance()->getSessionManager()->href(Tools::dispatch_url($this->getAutoLinkDestination(), 'add', array(
                     'atkpkret' => $id,
                     'atkfilter' => ($filter != '' ? $filter : ''),
-                )), Tools::atktext('new'), SessionManager::SESSION_NESTED, true);
+                )), $this->getOwnerInstance()->getLanguage()->trans('new'), SessionManager::SESSION_NESTED, true);
             }
 
             if ($this->m_destInstance->allowed('view') && !$this->m_destInstance->hasFlag(Node::NF_NO_VIEW) && $record[$this->fieldName()] != null) {
@@ -730,7 +731,7 @@ class ManyToOneRelation extends Relation
                 //de app crasht als er geen waarde is ingevuld.
                 $viewUrl = $sm->sessionUrl(Tools::dispatch_url($this->getAutoLinkDestination(), 'view', array('atkselector' => 'REPLACEME', 'atkfilter' => '')),
                     SessionManager::SESSION_NESTED);
-                $links[] = '<span id="'.$id."_view\" style=\"\"><a href='javascript:ATK.FormSubmit.atkSubmit(ATK.ManyToOneRelation.parse(\"".Tools::atkurlencode($viewUrl).'", document.entryform.'.$id.".value), true)' class=\"atkmanytoonerelation atkmanytoonerelation-link\">".Tools::atktext('view').'</a></span>';
+                $links[] = '<span id="'.$id."_view\" style=\"\"><a href='javascript:ATK.FormSubmit.atkSubmit(ATK.ManyToOneRelation.parse(\"".Tools::atkurlencode($viewUrl).'", document.entryform.'.$id.".value), true)' class=\"atkmanytoonerelation atkmanytoonerelation-link\">".$this->getOwnerInstance()->getLanguage()->trans('view').'</a></span>';
             }
         }
 
@@ -807,7 +808,7 @@ class ManyToOneRelation extends Relation
         $type = 'edit';
 
         if (!$this->createDestination()) {
-            Tools::atkerror("Could not create destination for destination: $this -> m_destination!");
+            throw new AtkErrorException("Could not create destination for destination: $this -> m_destination!");
 
             return;
         }
@@ -862,9 +863,9 @@ class ManyToOneRelation extends Relation
                 $result .= '<span id="'.$id.'_current">';
 
                 if ($this->hasFlag(self::AF_RELATION_AUTOLINK) && $this->m_destInstance->allowed('view') && !$this->m_destInstance->hasFlag(Node::NF_NO_VIEW)) {
-                    $url = Tools::dispatch_url($this->m_destination, 'view', ['atkselector' => $this->m_destInstance->primaryKey($record[$this->fieldName()])]);
+                    $url = $this->getOwnerInstance()->getSessionManager()->dispatch_url($this->m_destination, 'view', ['atkselector' => $this->m_destInstance->primaryKey($record[$this->fieldName()])]);
                     $descriptor = $this->m_destInstance->descriptor($destrecord);
-                    $result .= $descriptor.' '.Tools::href($url, Tools::atktext('view'), SessionManager::SESSION_NESTED, true,
+                    $result .= $descriptor.' '.$this->getOwnerInstance()->getSessionManager()->href($url, $this->getOwnerInstance()->getLanguage()->trans('view'), SessionManager::SESSION_NESTED, true,
                             'class="atkmanytoonerelation-link"');
                 } else {
                     $result .= $this->m_destInstance->descriptor($destrecord);
@@ -873,7 +874,7 @@ class ManyToOneRelation extends Relation
                 $result .= ' ';
 
                 if (!$this->hasFlag(self::AF_OBLIGATORY)) {
-                    $result .= '<a href="#" onClick="jQuery(\'#'.$id.'\').val(\'\');jQuery(\'#'.$id.'_current\').hide();" class="atkmanytoonerelation atkmanytoonerelation-link">'.Tools::atktext('unselect').'</a> ';
+                    $result .= '<a href="#" onClick="jQuery(\'#'.$id.'\').val(\'\');jQuery(\'#'.$id.'_current\').hide();" class="atkmanytoonerelation atkmanytoonerelation-link">'.$this->getOwnerInstance()->getLanguage()->trans('unselect').'</a> ';
                 }
                 $result .= '</span>';
             }
@@ -956,19 +957,19 @@ class ManyToOneRelation extends Relation
         $result = '';
         // we use the current level to automatically return to this page
         // when we come from the select..
-        $sm = SessionManager::getInstance();
+        $sm = $this->getOwnerInstance()->getSessionManager();
         $atktarget = Tools::atkurlencode(Config::getGlobal('dispatcher').'?atklevel='.$sm->atkLevel().'&'.$selname.'=[atkprimkey]');
-        $linkname = Tools::atktext('link_select_'.Tools::getNodeType($this->m_destination), $this->getOwnerInstance()->getModule(),
+        $linkname = $this->getOwnerInstance()->getLanguage()->trans('link_select_'.Tools::getNodeType($this->m_destination), $this->getOwnerInstance()->getModule(),
             $this->getOwnerInstance()->getType(), '', '', true);
         if (!$linkname) {
-            $linkname = Tools::atktext('link_select_'.Tools::getNodeType($this->m_destination), Tools::getNodeModule($this->m_destination),
+            $linkname = $this->getOwnerInstance()->getLanguage()->trans('link_select_'.Tools::getNodeType($this->m_destination), Tools::getNodeModule($this->m_destination),
                 Tools::getNodeType($this->m_destination), '', '', true);
         }
         if (!$linkname) {
-            $linkname = Tools::atktext('select_a');
+            $linkname = $this->getOwnerInstance()->getLanguage()->trans('select_a');
         }
 
-        $result .= Tools::href(Tools::dispatch_url($this->m_destination, 'select', ['atkfilter' => $filter, 'atktarget' => $atktarget]),
+        $result .= $this->getOwnerInstance()->getSessionManager()->href(Tools::dispatch_url($this->m_destination, 'select', ['atkfilter' => $filter, 'atktarget' => $atktarget]),
             $linkname, SessionManager::SESSION_NESTED, $this->m_autocomplete_saveform, 'class="atkmanytoonerelation atkmanytoonerelation-link"');
 
         return $result;
@@ -988,20 +989,20 @@ class ManyToOneRelation extends Relation
         $autolink = [];
 
         if ($this->hasFlag(self::AF_RELATION_AUTOLINK)) { // auto edit/view link
-            $page = Page::getInstance();
+            $page = $this->getOwnerInstance()->getPage();
             $page->register_script(Config::getGlobal('assets_url').'javascript/manytoonerelation.js');
-            $sm = SessionManager::getInstance();
+            $sm = $this->getOwnerInstance()->getSessionManager();
 
             if (!$this->m_destInstance->hasFlag(Node::NF_NO_VIEW) && $this->m_destInstance->allowed('view')) {
                 $viewUrl = $sm->sessionUrl(Tools::dispatch_url($this->getAutoLinkDestination(), 'view', array('atkselector' => 'REPLACEME', 'atkfilter' => '')),
                     SessionManager::SESSION_NESTED);
-                $autolink['view'] = " <a href='javascript:ATK.FormSubmit.atkSubmit(ATK.ManyToOneRelation.parse(\"".Tools::atkurlencode($viewUrl).'", document.entryform.'.$id.".value),true)' class='atkmanytoonerelation atkmanytoonerelation-link'>".Tools::atktext('view').'</a>';
+                $autolink['view'] = " <a href='javascript:ATK.FormSubmit.atkSubmit(ATK.ManyToOneRelation.parse(\"".Tools::atkurlencode($viewUrl).'", document.entryform.'.$id.".value),true)' class='atkmanytoonerelation atkmanytoonerelation-link'>".$this->getOwnerInstance()->getLanguage()->trans('view').'</a>';
             }
             if (!$this->m_destInstance->hasFlag(Node::NF_NO_ADD) && $this->m_destInstance->allowed('add')) {
-                $autolink['add'] = ' '.Tools::href(Tools::dispatch_url($this->getAutoLinkDestination(), 'add', array(
+                $autolink['add'] = ' '.$this->getOwnerInstance()->getSessionManager()->href(Tools::dispatch_url($this->getAutoLinkDestination(), 'add', array(
                         'atkpkret' => $name,
                         'atkfilter' => ($this->m_useFilterForAddLink && $filter != '' ? $filter : ''),
-                    )), Tools::atktext('new'), SessionManager::SESSION_NESTED, true, 'class="atkmanytoonerelation atkmanytoonerelation-link"');
+                    )), $this->getOwnerInstance()->getLanguage()->trans('new'), SessionManager::SESSION_NESTED, true, 'class="atkmanytoonerelation atkmanytoonerelation-link"');
             }
         }
 
@@ -1212,7 +1213,7 @@ EOF;
 
                 $selectOptions['enable-manytoonereleation-autocomplete'] = true;
                 // $selectOptions['tags'] = true;
-                $selectOptions['ajax--url'] = Tools::partial_url($this->m_ownerInstance->atkNodeUri(), $this->m_ownerInstance->m_action,
+                $selectOptions['ajax--url'] = $this->getOwnerInstance()->getSessionManager()->partial_url($this->m_ownerInstance->atkNodeUri(), $this->m_ownerInstance->m_action,
                     'attribute.'.$this->fieldName().'.autocomplete_search');
                 $selectOptions['minimum-input-length'] = $this->m_autocomplete_minchars;
                 $selectOptions = array_merge($selectOptions, $this->m_select2Options['search']);
@@ -1424,7 +1425,7 @@ EOF;
 
     public function validate(&$record, $mode)
     {
-        $sessionmanager = SessionManager::getInstance();
+        $sessionmanager = $this->getOwnerInstance()->getSessionManager();
         $storetype = null;
         if ($sessionmanager) {
             $storetype = $sessionmanager->stackVar('atkstore');
@@ -2096,7 +2097,7 @@ EOF;
         $selectOptions['enable-select2'] = true;
         $selectOptions['enable-manytoonereleation-autocomplete'] = true;
         $selectOptions['dropdown-auto-width'] = false;
-        $selectOptions['ajax--url'] = Tools::partial_url($this->m_ownerInstance->atkNodeUri(), $mode, 'attribute.'.$this->fieldName().'.autocomplete');
+        $selectOptions['ajax--url'] = $this->getOwnerInstance()->getSessionManager()->partial_url($this->m_ownerInstance->atkNodeUri(), $mode, 'attribute.'.$this->fieldName().'.autocomplete');
         $selectOptions['minimum-input-length'] = $this->m_autocomplete_minchars;
         $selectOptions['width'] = '100%';
 
