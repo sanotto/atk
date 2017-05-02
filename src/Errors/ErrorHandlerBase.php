@@ -12,15 +12,6 @@ abstract class ErrorHandlerBase
 {
     protected $params = [];
 
-    protected $session_namespace;
-    protected $session_data;
-
-    public function setSessionData($namespace, $data)
-    {
-        $this->session_namespace = $namespace;
-        $this->session_data = $data;
-    }
-
     /**
      * Constructor. Params are used to pass handler specific data to the handlers.
      *

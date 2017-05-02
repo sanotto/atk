@@ -15,14 +15,6 @@ use Sintattica\Atk\Security\SecurityManager;
  */
 class MailErrorHandler extends ErrorHandlerBase
 {
-    public static function &getSession()
-    {
-        if (!isset($_SESSION[Config::getGlobal('identifier')]) || !is_array($_SESSION[Config::getGlobal('identifier')])) {
-            $_SESSION[Config::getGlobal('identifier')] = [];
-        }
-
-        return $_SESSION[Config::getGlobal('identifier')];
-    }
 
     /**
      * Handle the error.
@@ -33,8 +25,8 @@ class MailErrorHandler extends ErrorHandlerBase
     public function handle($errorMessage, $debugMessage)
     {
 
-        $sessionData = &self::getSession();
-        $namespace = 'default';
+        $sessionData = isset($_SESSION[Config::getGlobal('identifier')]) ? $_SESSION[Config::getGlobal('identifier')] : [];
+        $identifier = $this->params['identifier'];
 
         $txt_app_title = Tools::atktext('app_title');
 
@@ -106,9 +98,9 @@ class MailErrorHandler extends ErrorHandlerBase
             }
 
             $body .= "\n\nATK SESSION\n".str_repeat('-', 70);
-            $body .= "\nNamespace: ".$namespace."\n";
-            if (isset($sessionData[$namespace]['stack'])) {
-                $stack = $sessionData[$namespace]['stack'];
+            $body .= "\nNamespace: ".$identifier."\n";
+            if (isset($sessionData[$identifier]['stack'])) {
+                $stack = $sessionData[$identifier]['stack'];
                 for ($i = 0; $i < count($stack); ++$i) {
                     $body .= "\nStack level $i:\n";
                     $item = isset($stack[$i]) ? $stack[$i] : null;
@@ -119,8 +111,8 @@ class MailErrorHandler extends ErrorHandlerBase
                     }
                 }
             }
-            if (isset($sessionData[$namespace]['globals'])) {
-                $ns_globals = $sessionData[$namespace]['globals'];
+            if (isset($sessionData[$identifier]['globals'])) {
+                $ns_globals = $sessionData[$identifier]['globals'];
                 if (count($ns_globals) > 0) {
                     $body .= "\nNamespace globals:\n";
                     foreach ($ns_globals as $key => $value) {
