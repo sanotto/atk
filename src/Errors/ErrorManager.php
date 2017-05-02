@@ -124,7 +124,7 @@ class ErrorManager
         $default_error_handlers = [];
         $mailReport = Config::getGlobal('mailreport');
         if ($mailReport) {
-            $default_error_handlers['Mail'] = array('mailto' => $mailReport);
+            $default_error_handlers['Mail'] = array('mailto' => $mailReport, 'identifier' => Config::getGlobal('identifier'));
         }
 
         $errorHandlers = Config::getGlobal('error_handlers', $default_error_handlers);
