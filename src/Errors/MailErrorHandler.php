@@ -15,7 +15,6 @@ use Sintattica\Atk\Security\SecurityManager;
  */
 class MailErrorHandler extends ErrorHandlerBase
 {
-
     /**
      * Handle the error.
      *
@@ -28,7 +27,7 @@ class MailErrorHandler extends ErrorHandlerBase
         $sessionData = isset($_SESSION[Config::getGlobal('identifier')]) ? $_SESSION[Config::getGlobal('identifier')] : [];
         $identifier = $this->params['identifier'];
 
-        $txt_app_title = Tools::atktext('app_title');
+        $txt_app_title = $this->params['app_title'];
 
         if ($this->params['mailto'] != '') {
             $subject = '['.$_SERVER['SERVER_NAME']."] $txt_app_title error";

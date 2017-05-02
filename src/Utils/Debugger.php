@@ -53,16 +53,6 @@ class Debugger
     protected static $s_instance = null;
 
     /**
-     * Get an instance of this class.
-     *
-     * @return Debugger Instance of atkDebugger
-     */
-    public static function getInstance()
-    {
-        return self::$s_instance;
-    }
-
-    /**
      * Constructor.
      * @param int $debugLevel
      * @param string $debugLog file to write logs

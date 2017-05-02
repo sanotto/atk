@@ -260,7 +260,7 @@ class AdminHandler extends ActionHandler
         $link = '';
         if ($this->m_node->allowed('add') && !$this->m_node->hasFlag(Node::NF_READONLY) && $this->m_node->hasFlag(Node::NF_IMPORT)) {
             $cssClass = 'class="btn btn-default admin_link admin_link_import"';
-            $link .= $this->sessionManager->href(Tools::dispatch_url($this->m_node->atkNodeUri(), 'import'), Tools::atktext('import', 'atk', $this->m_node->m_type),
+            $link .= $this->sessionManager->href(Tools::dispatch_url($this->m_node->atkNodeUri(), 'import'), $this->getLanguage()->text('import', 'atk', $this->m_node->m_type),
                 SessionManager::SESSION_NESTED, false, $cssClass);
         }
 
@@ -284,7 +284,7 @@ class AdminHandler extends ActionHandler
             $cssClass = 'class="btn btn-default admin_link admin_link_export"';
 
             $link .= $this->sessionManager->href(Tools::dispatch_url($this->m_node->atkNodeUri(), 'export', array('atkfilter' => $filter)),
-                Tools::atktext('export', 'atk', $this->m_node->m_type), SessionManager::SESSION_NESTED, false, $cssClass);
+                $this->getLanguage()->text('export', 'atk', $this->m_node->m_type), SessionManager::SESSION_NESTED, false, $cssClass);
         }
 
         return $link;
@@ -315,7 +315,7 @@ class AdminHandler extends ActionHandler
             $label = $node->text('link_'.$node->m_type.'_add', null, '', '', true);
             if (empty($label)) {
                 // generic text
-                $label = Tools::atktext('add', 'atk');
+                $label = $this->getLanguage()->text('add', 'atk');
             }
 
             if ($node->hasFlag(Node::NF_ADD_LINK)) {

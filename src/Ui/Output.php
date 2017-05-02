@@ -38,16 +38,6 @@ class Output
 
     protected static $s_instance = null;
 
-    /**
-     * Retrieve the one-and-only Output instance.
-     *
-     * @return Output The instance.
-     */
-    public static function getInstance()
-    {
-        return self::$s_instance;
-    }
-
     public function __construct(Debugger $debugger)
     {
         self::$s_instance = $this;

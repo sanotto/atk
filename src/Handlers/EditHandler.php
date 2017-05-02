@@ -225,7 +225,7 @@ class EditHandler extends ViewEditBase
         $ui = $node->getUi();
 
         if (is_object($ui)) {
-            $this->getPage()->setTitle(Tools::atktext('app_shorttitle').' - '.$node->actionTitle('edit', $record));
+            $this->getPage()->setTitle($this->getLanguage()->text('app_shorttitle').' - '.$node->actionTitle('edit', $record));
 
             $output = $ui->render('action.tpl', $params, $node->m_module);
             $this->addRenderBoxVar('title', $node->actionTitle('edit', $record));
@@ -474,7 +474,7 @@ class EditHandler extends ViewEditBase
         // Handle errors
         $errors = [];
         if (count($data['error']) > 0) {
-            $error_title = '<b>'.Tools::atktext('error_formdataerror').'</b>';
+            $error_title = '<b>'.$this->getLanguage()->text('error_formdataerror').'</b>';
 
             foreach ($data['error'] as $error) {
                 if ($error['err'] == 'error_primarykey_exists') {
@@ -482,7 +482,7 @@ class EditHandler extends ViewEditBase
                 } else {
                     if (count($tabs) > 1 && $error['tab']) {
                         $tabLink = $this->getTabLink($node, $error);
-                        $error_tab = ' ('.Tools::atktext('error_tab').' '.$tabLink.' )';
+                        $error_tab = ' ('.$this->getLanguage()->text('error_tab').' '.$tabLink.' )';
                     } else {
                         $tabLink = null;
                         $error_tab = '';
@@ -523,12 +523,12 @@ class EditHandler extends ViewEditBase
             if (count($pk_err_attrib) > 0) { // Make primary key error message
                 $pk_err_msg = '';
                 for ($i = 0; $i < count($pk_err_attrib); ++$i) {
-                    $pk_err_msg .= Tools::atktext($pk_err_attrib[$i], $node->m_module, $node->m_type);
+                    $pk_err_msg .= $this->getLanguage()->text($pk_err_attrib[$i], $node->m_module, $node->m_type);
                     if (($i + 1) < count($pk_err_attrib)) {
                         $pk_err_msg .= ', ';
                     }
                 }
-                $errors[] = array('label' => Tools::atktext('error_primarykey_exists'), 'message' => $pk_err_msg);
+                $errors[] = array('label' => $this->getLanguage()->text('error_primarykey_exists'), 'message' => $pk_err_msg);
             }
         }
 

@@ -46,7 +46,7 @@ class ImapAuth extends AuthInterface
         }
 
         if (Config::getGlobal('auth_mail_server') == '') {
-            $this->m_fatalError = Tools::atktext('auth_no_server');
+            $this->m_fatalError = 'auth_no_server';
 
             return SecurityManager::AUTH_ERROR;
         }

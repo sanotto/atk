@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Session;
 
 use Sintattica\Atk\Core\Config;
+use Sintattica\Atk\Core\Language;
 use Sintattica\Atk\Core\NodeManager;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Ui\Ui;
@@ -28,6 +29,8 @@ class SessionManager
     protected $ui;
     protected $debugger;
     protected $redirect;
+
+    /** @var  NodeManager $nodeManager */
     protected $nodeManager;
 
     /** @var  MessageQueue $messageQueue */
@@ -35,6 +38,9 @@ class SessionManager
 
     /** @var  SessionStoreFactory $sessionStoreFactory */
     protected $sessionStoreFactory;
+    
+    /** @var  Language $language */
+    protected $language;
 
     /**
      * @var string
@@ -67,8 +73,9 @@ class SessionManager
      * @param Ui $ui
      * @param Debugger $debugger
      * @param Redirect $redirect
+     * @param Language $language
      */
-    public function __construct($namespace = 'default', $usestack = true, Ui $ui, Debugger $debugger, Redirect $redirect)
+    public function __construct($namespace = 'default', $usestack = true, Ui $ui, Debugger $debugger, Redirect $redirect, Language $language)
     {
         self::$s_instance = $this;
 
@@ -77,18 +84,9 @@ class SessionManager
         $this->ui = $ui;
         $this->debugger = $debugger;
         $this->redirect = $redirect;
+        $this->language = $language;
 
         $this->debugger->addDebug("creating sessionManager (namespace: $namespace)");
-    }
-
-    /**
-     * Returns the sessionmanager.
-     *
-     * @return SessionManager Session manager
-     */
-    public static function getInstance()
-    {
-        return self::$s_instance;
     }
 
     /**
@@ -490,9 +488,9 @@ class SessionManager
                 'title' => $title,
                 'descriptor' => $descriptor,
                 'node' => $node,
-                'nodetitle' => Tools::atktext($type, $module, $type),
+                'nodetitle' => $this->language->text($type, $module, $type),
                 'action' => $action,
-                'actiontitle' => Tools::atktext($action, $module, $type),
+                'actiontitle' => $this->language->text($action, $module, $type),
             );
 
             if ($i < count($stack) - 1) {
@@ -513,7 +511,7 @@ class SessionManager
      * it would show:
      * Student [ Teknoman ] - Grade [ A+ ]
      *
-     * @return string The descriptortrace
+     * @return array The descriptortrace
      */
     public function descriptorTrace()
     {
@@ -536,7 +534,7 @@ class SessionManager
                 if (is_object($node)) {
                     $txt = $this->ui->nodeTitle($node);
                 } else {
-                    $txt = Tools::atktext($nodename, $module);
+                    $txt = $this->language->text($nodename, $module);
                 }
 
                 $res[] = $txt.(isset($stack[$i]['descriptor']) ? " [ {$stack[$i]['descriptor']} ] " : '');

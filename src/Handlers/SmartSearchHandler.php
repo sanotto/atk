@@ -208,7 +208,7 @@ class SmartSearchHandler extends AbstractSearchHandler
         );
         $result = [];
         foreach ($labels as $label) {
-            $result[$label] = htmlentities(Tools::atktext($label, 'atk'));
+            $result[$label] = htmlentities($this->getLanguage()->text($label, 'atk'));
         }
 
         return $result;
@@ -639,7 +639,7 @@ class SmartSearchHandler extends AbstractSearchHandler
 
         $params['content'] = $this->invoke('smartSearchForm', $name, $criteria);
 
-        $params['buttons'][] = '<input type="submit" class="btn btn-default btn_search" name="atkdosearch" value="'.Tools::atktext('search', 'atk').'">';
+        $params['buttons'][] = '<input type="submit" class="btn btn-default btn_search" name="atkdosearch" value="'.$this->getLanguage()->text('search', 'atk').'">';
 
         $params['formend'] = '</form>';
 

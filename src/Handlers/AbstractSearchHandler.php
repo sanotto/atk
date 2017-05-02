@@ -241,10 +241,10 @@ abstract class AbstractSearchHandler extends ActionHandler
             'forget_criteria' => $this->getForgetCriteria($current),
             'toggle_save_criteria' => $this->getToggleSaveCriteria(),
             'save_criteria' => $this->getSaveCriteria($current),
-            'label_load_criteria' => htmlentities(Tools::atktext('load_criteria', 'atk')),
-            'label_forget_criteria' => htmlentities(Tools::atktext('forget_criteria', 'atk')),
-            'label_save_criteria' => '<label for="toggle_save_criteria">'.htmlentities(Tools::atktext('save_criteria', 'atk')).'</label>',
-            'text_save_criteria' => htmlentities(Tools::atktext('save_criteria', 'atk')),
+            'label_load_criteria' => htmlentities($this->getLanguage()->text('load_criteria', 'atk')),
+            'label_forget_criteria' => htmlentities($this->getLanguage()->text('forget_criteria', 'atk')),
+            'label_save_criteria' => '<label for="toggle_save_criteria">'.htmlentities($this->getLanguage()->text('save_criteria', 'atk')).'</label>',
+            'text_save_criteria' => htmlentities($this->getLanguage()->text('save_criteria', 'atk')),
         );
     }
 

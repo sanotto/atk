@@ -50,6 +50,16 @@ class Tools
     public static $s_hasMultiByteSupport = null;
 
 
+    /** @var  Language $language */
+    protected $language;
+
+
+    public function __construct(Language $language)
+    {
+        $this->language = $language;
+    }
+
+
     /**
      * Returns a trace-route from all functions where-through the code has been executed.
      *
@@ -169,37 +179,6 @@ class Tools
             fwrite($fp, $text."\n");
             fclose($fp);
         }
-    }
-
-    /**
-     * Replaces the [vars] with the values from the language files
-     * Please note that it is important, for performance reasons,
-     * that you pass along the module where the language files can be found.
-     *
-     * @param mixed $string string or array of strings containing the name(s) of the string to return
-     *                               when an array of strings is passed, the second will be the fallback if
-     *                               the first one isn't found, and so forth
-     * @param string $module module in which the language file should be looked for,
-     *                               defaults to core module with fallback to ATK
-     * @param string $node the node to which the string belongs
-     * @param string $lng ISO 639-1 language code, defaults to config variable
-     * @param string $firstfallback the first module to check as part of the fallback
-     * @param bool $nodefaulttext if true, then it doesn't return a default text when it can't find a translation
-     * @param bool $modulefallback Wether or not to use all the modules of the application in the fallback,
-     *                               when looking for strings
-     *
-     * @return string the string from the languagefile
-     */
-    public static function atktext(
-        $string,
-        $module = '',
-        $node = '',
-        $lng = '',
-        $firstfallback = '',
-        $nodefaulttext = false,
-        $modulefallback = false
-    ) {
-        return Language::text($string, $module, $node, $lng, $firstfallback, $nodefaulttext, $modulefallback);
     }
 
     /**
@@ -1157,7 +1136,7 @@ class Tools
      */
     public static function atkGetCharset()
     {
-        return Config::getGlobal('default_charset', self::atktext('charset', 'atk'));
+        return 'utf8';
     }
 
     /**
@@ -1254,62 +1233,6 @@ class Tools
         return;
     }
 
-    /**
-     * Format date according to a format string, uses ATK's language files to translate
-     * months, weekdays etc.
-     *
-     * @param $date    mixed  timestamp or date array (gotten with getdate())
-     * @param $format  string format string, compatible with PHP's date format functions
-     * @param $weekday bool always include day-of-week or not
-     *
-     * @return string formatted date
-     */
-    public static function atkFormatDate($date, $format, $weekday = false)
-    {
-        static $langcache = [];
-
-        if (!is_array($date)) {
-            $date = getdate($date);
-        }
-
-        /* format month */
-        $format = str_replace('M', '%-%', $format);
-        $format = str_replace('F', '%=%', $format);
-
-        /* format day */
-        $format = str_replace('D', '%&%', $format);
-        $format = str_replace('l', '%*%', $format);
-
-        if ($weekday && strpos($format, '%&%') === false && strpos($format, '%*%') === false) {
-            $format = str_replace('d', '%*% d', $format);
-            $format = str_replace('j', '%*% j', $format);
-        }
-
-        /* get date string */
-        $str_date = date($format, $date[0]);
-
-        $month = $date['month'];
-        $shortmonth = substr(strtolower($date['month']), 0, 3);
-
-        /* store the self::text calls */
-        if (!isset($langcache[$month])) {
-            $langcache[$month] = self::atktext(strtolower($month), 'atk');
-        }
-
-        if (!isset($langcache[$shortmonth])) {
-            $langcache[$shortmonth] = self::atktext($shortmonth);
-        }
-
-        /* replace month/week name */
-        $str_date = str_replace('%-%', $langcache[$shortmonth], $str_date);
-        $str_date = str_replace('%=%', $langcache[$month], $str_date);
-        $str_date = str_replace('%*%', self::atktext(strtolower($date['weekday']), 'atk'), $str_date);
-        $str_date = str_replace('%&%', self::atktext(substr(strtolower($date['weekday']), 0, 3), 'atk'), $str_date);
-
-        /* return string */
-
-        return $str_date;
-    }
 
     public static function getBrowserInfo($useragent = '')
     {
@@ -1529,7 +1452,7 @@ class Tools
      *
      * @param string $str string to convert
      * @param int $quote_style quote style (defaults to ENT_COMPAT)
-     * @param string $charset character set to use (default to Tools::atktext('charset', 'atk'))
+     * @param string $charset character set to use (default to $this->language->text('charset', 'atk'))
      *
      * @return string encoded string
      */

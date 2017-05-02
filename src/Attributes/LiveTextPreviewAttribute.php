@@ -4,7 +4,7 @@ namespace Sintattica\Atk\Attributes;
 
 /**
  * The LiveTextPreview adds a preview to the page that previews realtime
- * the content of any Attribute or atkTextAttribute while it is being
+ * the content of any Attribute or TextAttribute while it is being
  * edited.
  *
  * @author Ivo Jansch <ivo@achievo.org>

@@ -64,7 +64,7 @@ class CkAttribute extends HtmlAttribute
     {
         $locale = $this->getOwnerInstance()->getLanguage()->trans('locale');
         $options = [
-            'language' => $this->getOwnerInstance()->getLanguage()::getLanguage(),
+            'language' => $this->getOwnerInstance()->getLanguage()->getLanguageCode(),
             'wsc_lang' => $locale,
             'scayt_sLang' => $locale,
         ];

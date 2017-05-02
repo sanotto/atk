@@ -40,7 +40,7 @@ class FeedbackHandler extends ActionHandler
         $node = $this->m_node;
         $ui = $this->getUi();
 
-        $params['content'] = '<br>'.Tools::atktext('feedback_'.$action.'_'.Tools::atkActionStatus($actionstatus), $node->m_module, $node->m_type);
+        $params['content'] = '<br>'.$this->getLanguage()->text('feedback_'.$action.'_'.Tools::atkActionStatus($actionstatus), $node->m_module, $node->m_type);
         if ($message) {
             $params['content'] .= ' <br>'.$message;
         }
@@ -49,7 +49,7 @@ class FeedbackHandler extends ActionHandler
 
         if ($sm->atkLevel() > 0) {
             $params['formstart'] = '<form method="get">'.$sm->formState($this->sessionManager::SESSION_BACK);
-            $params['buttons'][] = '<input type="submit" class="btn btn-default btn_cancel" value="&lt;&lt; '.Tools::atktext('back').'">';
+            $params['buttons'][] = '<input type="submit" class="btn btn-default btn_cancel" value="&lt;&lt; '.$this->getLanguage()->text('back').'">';
             $params['formend'] = '</form>';
         }
 

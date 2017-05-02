@@ -265,7 +265,7 @@ class ImportHandler extends ActionHandler
         $rowCount = $this->getRowCount($filename, $skipfirstrow);
 
         // Display sample
-        $sample = Tools::atktext('import_sample').':<br><br><table class="recordlist">'.$this->_getAnalyseSample($columncount, $col_map, $csv_data,
+        $sample = $this->getLanguage()->text('import_sample').':<br><br><table class="recordlist">'.$this->_getAnalyseSample($columncount, $col_map, $csv_data,
                 $skipfirstrow);
 
         $content = '
@@ -310,7 +310,7 @@ class ImportHandler extends ActionHandler
                     $content .= '<tr><td colSpan=2>';
                     foreach ($errors as $error) {
                         if (!empty($error)) {
-                            $content .= '<span class="error">'.Tools::atktext($error['msg']).$error['spec'].'</span><br />';
+                            $content .= '<span class="error">'.$this->getLanguage()->text($error['msg']).$error['spec'].'</span><br />';
                         }
                     }
                     $content .= '</td></tr>';
@@ -350,10 +350,10 @@ class ImportHandler extends ActionHandler
         $content .= '<input type="hidden" name="fileid" value="'.$fileid.'">';
         $content .= '<input type="hidden" name="columncount" value="'.$columncount.'">';
         $content .= '<table border="0">';
-        $content .= '<tr><td>'.Tools::atktext('delimiter').': </td><td><input type="text" size="2" name="delimiter" value="'.htmlentities($delimiter).'"></td></tr>';
-        $content .= '<tr><td>'.Tools::atktext('enclosure').': </td><td><input type="text" size="2" name="enclosure" value="'.htmlentities($enclosure).'"></td></tr>';
-        $content .= '<tr><td>'.Tools::atktext('import_detectedcolumns').': </td><td>'.$columncount.'</td></tr>';
-        $content .= '<tr><td>'.Tools::atktext('import_detectedrows').': </td><td>'.$rowcount.'</td></tr>';
+        $content .= '<tr><td>'.$this->getLanguage()->text('delimiter').': </td><td><input type="text" size="2" name="delimiter" value="'.htmlentities($delimiter).'"></td></tr>';
+        $content .= '<tr><td>'.$this->getLanguage()->text('enclosure').': </td><td><input type="text" size="2" name="enclosure" value="'.htmlentities($enclosure).'"></td></tr>';
+        $content .= '<tr><td>'.$this->getLanguage()->text('import_detectedcolumns').': </td><td>'.$columncount.'</td></tr>';
+        $content .= '<tr><td>'.$this->getLanguage()->text('import_detectedrows').': </td><td>'.$rowcount.'</td></tr>';
         $content .= '</table>';
 
         return $content;
@@ -373,7 +373,7 @@ class ImportHandler extends ActionHandler
         $sample = '<tr>';
         for ($j = 1; $j <= $columncount; ++$j) {
             $sample .= '<th>';
-            $sample .= ucfirst(Tools::atktext('column')).' '.$j;
+            $sample .= ucfirst($this->getLanguage()->text('column')).' '.$j;
             $sample .= '</th>';
         }
         $sample .= '</tr>';
@@ -395,7 +395,7 @@ class ImportHandler extends ActionHandler
             for ($j = 0; $j < $columncount; ++$j) {
                 if ($i == 0 && $skipfirstrow) {
                     $sample .= '<th>';
-                    $sample .= Tools::atktext(trim($line[$j]));
+                    $sample .= $this->getLanguage()->text(trim($line[$j]));
                 } else {
                     $sample .= '<td>';
                     if ($col_map[$j] != '' && $col_map[$j] != '-') {
@@ -403,7 +403,7 @@ class ImportHandler extends ActionHandler
                         if ($display) {
                             $sample .= $display;
                         } else {
-                            $sample .= Tools::atktext($col_map[$j]);
+                            $sample .= $this->getLanguage()->text($col_map[$j]);
                         }
 
                         if ((string)$display !== (string)$line[$j]) {
@@ -498,28 +498,28 @@ class ImportHandler extends ActionHandler
             $allFields[] = '';
         }
         foreach ($allFields as $allField) {
-            $content .= Tools::atktext('import_allfield').': </td><td>'.$this->getAttributeSelector(0, $allField, 'allFields[]');
+            $content .= $this->getLanguage()->text('import_allfield').': </td><td>'.$this->getAttributeSelector(0, $allField, 'allFields[]');
 
             if ($allField != '') {
                 $attr = $this->getUsableAttribute($allField);
 
                 if (is_object($attr)) {
                     $fakeeditarray = array($allField => $this->m_postvars[$allField]);
-                    $content .= ' '.Tools::atktext('value').': '.$attr->edit($fakeeditarray, '', 'edit').'<br/>';
+                    $content .= ' '.$this->getLanguage()->text('value').': '.$attr->edit($fakeeditarray, '', 'edit').'<br/>';
                 }
             }
             $content .= '</td></tr><tr><td>';
         }
 
-        $content .= Tools::atktext('import_skipfirstrow').': </td><td><input type="checkbox" name="skipfirstrow" class="atkcheckbox" value="1" '.($skipfirstrow ? 'CHECKED' : '').'/>';
+        $content .= $this->getLanguage()->text('import_skipfirstrow').': </td><td><input type="checkbox" name="skipfirstrow" class="atkcheckbox" value="1" '.($skipfirstrow ? 'CHECKED' : '').'/>';
         $content .= '</td></tr><tr><td>';
-        $content .= Tools::atktext('import_doupdate').': </td><td> <input type="checkbox" name="doupdate" class="atkcheckbox" value="1" '.($doupdate ? 'CHECKED' : '').'/>';
+        $content .= $this->getLanguage()->text('import_doupdate').': </td><td> <input type="checkbox" name="doupdate" class="atkcheckbox" value="1" '.($doupdate ? 'CHECKED' : '').'/>';
         $content .= '</td></tr><tr><td>';
-        $content .= Tools::atktext('import_update_key').': </td><td>'.$this->getAttributeSelector(0, $updatekey1, 'updatekey1', 2).'</td>';
+        $content .= $this->getLanguage()->text('import_update_key').': </td><td>'.$this->getAttributeSelector(0, $updatekey1, 'updatekey1', 2).'</td>';
         $content .= '</td></tr><tr><td>';
-        $content .= Tools::atktext('import_onfalseidentifier').': </td><td> <input type="checkbox" name="onfalseid" class="atkcheckbox" value="1" '.($onfalseidentifier ? 'CHECKED' : '').'/>';
+        $content .= $this->getLanguage()->text('import_onfalseidentifier').': </td><td> <input type="checkbox" name="onfalseid" class="atkcheckbox" value="1" '.($onfalseidentifier ? 'CHECKED' : '').'/>';
         $content .= '</td></tr><tr><td>';
-        $content .= Tools::atktext('import_validatefirst').': </td><td> <input type="checkbox" name="novalidatefirst" class="atkcheckbox" value="1" '.($novalidatefirst ? 'CHECKED' : '').'/>';
+        $content .= $this->getLanguage()->text('import_validatefirst').': </td><td> <input type="checkbox" name="novalidatefirst" class="atkcheckbox" value="1" '.($novalidatefirst ? 'CHECKED' : '').'/>';
 
         $content .= '    </td>';
         $content .= '  </tr>';
@@ -953,7 +953,7 @@ class ImportHandler extends ActionHandler
         }
 
         if ($emptycol == 2) {
-            $res .= '<option value="-" '.(($value == '-' || !$hasoneselected) ? 'selected' : '').' style="font-style: italic">'.Tools::atktext('import_ignorecolumn');
+            $res .= '<option value="-" '.(($value == '-' || !$hasoneselected) ? 'selected' : '').' style="font-style: italic">'.$this->getLanguage()->text('import_ignorecolumn');
         } elseif ($emptycol == 1) {
             $res .= '<option value="" '.((!$value || !$hasoneselected) ? 'selected' : '').'>';
         }
@@ -979,7 +979,7 @@ class ImportHandler extends ActionHandler
                 return $key;
             }
 
-            if (strtolower($item) == strtolower(Tools::atktext($value, $this->m_node->m_module, $this->m_node->m_type))) {
+            if (strtolower($item) == strtolower($this->getLanguage()->text($value, $this->m_node->m_module, $this->m_node->m_type))) {
                 return $key;
             }
         }
@@ -1273,8 +1273,8 @@ class ImportHandler extends ActionHandler
                     }
 
                     $importerrors[$counter][] = array(
-                        'msg' => Tools::atktext('error_formdataerror'),
-                        'spec' => sprintf(Tools::atktext('import_nonunique_identifier'), $this->getValueFromRecord($rec, $attributename)),
+                        'msg' => $this->getLanguage()->text('error_formdataerror'),
+                        'spec' => sprintf($this->getLanguage()->text('import_nonunique_identifier'), $this->getValueFromRecord($rec, $attributename)),
                     );
                 }
             }
@@ -1455,7 +1455,7 @@ class ImportHandler extends ActionHandler
     public function _returnErrors($errors, $singleerror, $doubleerror, &$collection)
     {
         if (count($errors) > 0) {
-            $msg = Tools::atktext((count($errors) == 1) ? $singleerror : $doubleerror).': ';
+            $msg = $this->getLanguage()->text((count($errors) == 1) ? $singleerror : $doubleerror).': ';
             foreach ($errors as $key => $field) {
                 $attr = $this->getUsableAttribute($field);
                 $errors[$key] = $attr->label();
@@ -1508,8 +1508,8 @@ class ImportHandler extends ActionHandler
             if (!$result) {
                 if (in_array($field, $this->getObligatoryAttributes())) {
                     return array(
-                        'msg' => sprintf(Tools::atktext('import_error_allfieldnocorrectdata'),
-                            Tools::atktext($field, $this->m_node->m_module, $this->m_node->m_type), var_export($values[$field], 1)),
+                        'msg' => sprintf($this->getLanguage()->text('import_error_allfieldnocorrectdata'),
+                            $this->getLanguage()->text($field, $this->m_node->m_module, $this->m_node->m_type), var_export($values[$field], 1)),
                     );
                 } else {
                     $value = '';
@@ -1573,8 +1573,8 @@ class ImportHandler extends ActionHandler
                     $validatedrecs['add'][] = $rec;
                 } else {
                     $importerrors[] = array(
-                        'msg' => Tools::atktext('error_formdataerror'),
-                        'spec' => sprintf(Tools::atktext('import_nonunique_identifier'), $this->getValueFromRecord($rec, $updatekey1)),
+                        'msg' => $this->getLanguage()->text('error_formdataerror'),
+                        'spec' => sprintf($this->getLanguage()->text('import_nonunique_identifier'), $this->getValueFromRecord($rec, $updatekey1)),
                     );
                 }
             }
