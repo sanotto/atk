@@ -114,7 +114,7 @@ class ExportHandler extends ActionHandler
         $page->register_scriptcode("
         function confirm_delete()
         {
-         var where_to = confirm('".Tools::atktext('confirm_delete')."');
+         var where_to = confirm('".$this->getLanguage()->text('confirm_delete')."');
          var dodelete = $( 'export_selection_options' ).value;
 
          if (where_to == true)
@@ -163,7 +163,7 @@ class ExportHandler extends ActionHandler
             }
         }
 
-        return '<td>'.Tools::atktext('export_selections_name',
+        return '<td>'.$this->getLanguage()->text('export_selections_name',
             'atk').': </td><td align="left"><input type="text" size="40" name="export_selection_name" id="export_selection_name" value="'.$value.'"></td>
               <input type="hidden" name="exportvalue" value="'.$this->m_postvars['exportvalue'].'" />';
     }
@@ -180,7 +180,7 @@ class ExportHandler extends ActionHandler
         $url_delete = Tools::dispatch_url($this->m_node->m_module.'.'.$this->m_node->m_type, 'export', array('dodelete' => $selected));
 
         if ($selected) {
-            $result = '<a href="'.$url_delete.'" title="'.Tools::atktext('delete_selection').'" onclick="confirm_delete();">'.Tools::atktext('delete_selection').'</a>';
+            $result = '<a href="'.$url_delete.'" title="'.$this->getLanguage()->text('delete_selection').'" onclick="confirm_delete();">'.$this->getLanguage()->text('delete_selection').'</a>';
 
             return $result;
         }
@@ -200,11 +200,11 @@ class ExportHandler extends ActionHandler
         $params['formstart'] = '<form name="entryform" enctype="multipart/form-data" action="'.$action.'" method="post" class="form-horizontal">';
         $params['formstart'] .= $sm->formState();
         $params['formstart'] .= '<input type="hidden" name="phase" value="process"/>';
-        $params['buttons'][] = $this->sessionManager->button(Tools::atktext('cancel', 'atk'), '', $this->sessionManager::SESSION_BACK, true);
-        $params['buttons'][] = '<input class="btn" type="submit" value="'.Tools::atktext('export', 'atk').'"/>';
-        $params['buttons'][] = '<input id="export_save_button" style="display:none;" value="'.Tools::atktext('save_export_selection',
+        $params['buttons'][] = $this->sessionManager->button($this->getLanguage()->text('cancel', 'atk'), '', $this->sessionManager::SESSION_BACK, true);
+        $params['buttons'][] = '<input class="btn" type="submit" value="'.$this->getLanguage()->text('export', 'atk').'"/>';
+        $params['buttons'][] = '<input id="export_save_button" style="display:none;" value="'.$this->getLanguage()->text('save_export_selection',
                 'atk').'" name="save_export" class="btn" type="submit" /> ';
-        $params['content'] = '<b>'.Tools::atktext('export_config_explanation', 'atk', $this->m_node->m_type).'</b><br/><br/>';
+        $params['content'] = '<b>'.$this->getLanguage()->text('export_config_explanation', 'atk', $this->m_node->m_type).'</b><br/><br/>';
         $params['content'] .= $this->_getOptions();
         $params['formend'] = '</form>';
 
@@ -269,39 +269,39 @@ class ExportHandler extends ActionHandler
         if (true === Config::getGlobal('enable_export_save_selection')) {
             $content .= $this->_getOptionsFormRow(
                 null,
-                Tools::atktext('export_selections', 'atk'),
-                $this->getExportSelectionDropdown().'&nbsp;&nbsp;&nbsp;<a href="javascript:void(0);" onclick="toggleSelectionName(\'new\');return false;">'.Tools::atktext('new', 'atk'));
+                $this->getLanguage()->text('export_selections', 'atk'),
+                $this->getExportSelectionDropdown().'&nbsp;&nbsp;&nbsp;<a href="javascript:void(0);" onclick="toggleSelectionName(\'new\');return false;">'.$this->getLanguage()->text('new', 'atk'));
 
             $content .= $this->_getOptionsFormRow(null, '', '<div id="selection_interact"></div>');
 
             $content .= $this->_getOptionsFormRow(
                 ['id' => 'export_name', 'style'=>"display:none;"],
-                Tools::atktext('export_selections_name', 'atk'),
+                $this->getLanguage()->text('export_selections_name', 'atk'),
                 '<input type="text" size="40" id="export_selection_name" name="export_selection_name" value="" class="form-control">'
             );
         }
 
         $content .= $this->_getOptionsFormRow(
             null,
-            Tools::atktext('delimiter', 'atk'),
+            $this->getLanguage()->text('delimiter', 'atk'),
             '<input type="text" class="form-control" size="2" name="delimiter" value='.Config::getGlobal('export_delimiter', ';').'>'
         );
 
         $content .= $this->_getOptionsFormRow(
             null,
-            Tools::atktext('enclosure', 'atk'),
+            $this->getLanguage()->text('enclosure', 'atk'),
             '<input type="text" size="2" class="form-control" name="enclosure" value='.Config::getGlobal('export_enclosure', '&quot;').'>'
         );
 
         $content .= $this->_getOptionsFormRow(
             null,
-            Tools::atktext('export_selectcolumns', 'atk'),
+            $this->getLanguage()->text('export_selectcolumns', 'atk'),
             '<div id="export_attributes">'.$this->getAttributeSelect().'</div>'
         );
 
         $content .= $this->_getOptionsFormRow(
             null,
-            Tools::atktext('export_generatetitlerow'),
+            $this->getLanguage()->text('export_generatetitlerow'),
             '<input type="checkbox" name="generatetitlerow" class="atkcheckbox" value=1 '.(Config::getGlobal('export_titlerow_checked', true) ? 'checked' : '').'>'
         );
 
@@ -317,7 +317,7 @@ class ExportHandler extends ActionHandler
     {
         $html = '
         <select name="export_selection_options" id="export_selection_options" onchange="toggleSelectionName();return false;" class="form-control select-standard">
-          <option value="none">'.Tools::atktext('none', 'atk');
+          <option value="none">'.$this->getLanguage()->text('none', 'atk');
 
         $options = $this->getExportSelections();
         if (count($options)) {
@@ -442,7 +442,7 @@ class ExportHandler extends ActionHandler
 
             if ($tab != 'default') {
                 $content .= '<div class="col-sm-12 attributes-group-title">';
-                $content .= Tools::atktext(["tab_$tab", $tab], $this->m_node->m_module, $this->m_node->m_type);
+                $content .= $this->getLanguage()->text(["tab_$tab", $tab], $this->m_node->m_module, $this->m_node->m_type);
                 $content .= '</div>';
             }
 

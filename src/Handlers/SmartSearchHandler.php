@@ -208,7 +208,7 @@ class SmartSearchHandler extends AbstractSearchHandler
         );
         $result = [];
         foreach ($labels as $label) {
-            $result[$label] = htmlentities(Tools::atktext($label, 'atk'));
+            $result[$label] = htmlentities($this->getLanguage()->text($label, 'atk'));
         }
 
         return $result;
@@ -632,7 +632,7 @@ class SmartSearchHandler extends AbstractSearchHandler
         $params = [];
         $params['formstart'] = '<form name="entryform" action="'.Config::getGlobal('dispatcher').'" method="post" class="form">'.$sm->formState(SessionManager::SESSION_REPLACE).'<input type="hidden" name="atkaction" value="smartsearch">'.'<input type="hidden" name="atknodeuri" value="'.$node->atkNodeUri().'">';
         $params['content'] = $this->invoke('smartSearchForm', $name, $criteria);
-        $params['buttons'][] = '<input type="submit" class="btn btn-default btn_search" name="atkdosearch" value="'.Tools::atktext('search', 'atk').'">';
+        $params['buttons'][] = '<input type="submit" class="btn btn-default btn_search" name="atkdosearch" value="'.$this->getLanguage()->text('search', 'atk').'">';
         $params['formend'] = '</form>';
 
         $action = $ui->renderAction('smartsearch', $params);

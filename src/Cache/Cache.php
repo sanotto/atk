@@ -46,7 +46,7 @@ abstract class Cache implements ArrayAccess
     protected $m_lifetime = 3600;
 
     /**
-     * Namespace so atkCache can also be used on shared hosts.
+     * Namespace so Cache can also be used on shared hosts.
      *
      * @var string
      */
@@ -72,7 +72,7 @@ abstract class Cache implements ArrayAccess
      *
      * @throws Exception if $fallback is false and Cache type(s) not found
      */
-    public static function getInstance($types = '', $fallback = true, $force = false)
+    public static function create($types = '', $fallback = true, $force = false)
     {
         if ($types == '') {
             $types = Config::getGlobal('cache_method', array());
@@ -104,7 +104,7 @@ abstract class Cache implements ArrayAccess
         }
 
         // Default return var cache
-        return self::getInstance('var', false, $force);
+        return self::create('var', false, $force);
     }
 
     /**

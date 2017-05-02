@@ -6,7 +6,7 @@ use Sintattica\Atk\Utils\BrowserInfo;
 use Sintattica\Atk\Core\Tools;
 
 /**
- * The atkTextAttribute class represents an attribute of a node
+ * The TextAttribute class represents an attribute of a node
  * that is a big text field.
  *
  * @author Ivo Jansch <ivo@achievo.org>
@@ -164,7 +164,7 @@ class TextAttribute extends Attribute
             return $db->escapeSQL($rec[$this->fieldName()]);
         } else {
             return $rec[$this->fieldName()];
-        } //CLOB in oci9 don't need quotes to be escaped EVIL HACK! THIS IS NOT ATKTEXTATTRIBUTE's PROBLEM!
+        } //CLOB in oci9 don't need quotes to be escaped EVIL HACK! THIS IS NOT TEXTATTRIBUTE's PROBLEM!
     }
 
     /**

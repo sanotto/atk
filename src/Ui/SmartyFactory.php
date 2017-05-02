@@ -2,13 +2,15 @@
 
 namespace Sintattica\Atk\Ui;
 
+use Sintattica\Atk\Core\Language;
 use Sintattica\Atk\Errors\AtkErrorException;
 use Sintattica\Atk\Utils\Debugger;
 use Smarty;
 
 class SmartyFactory
 {
-    public static function createSmarty(Debugger $debugger, $compileDir, $templateDir, $forceCompile)
+
+    public static function createSmarty(Debugger $debugger, Language $language, $compileDir, $templateDir, $forceCompile)
     {
         $debugger->addDebug('Creating Smarty instance');
 
@@ -22,6 +24,8 @@ class SmartyFactory
         $smarty->setCompileDir(realpath($compileDir));
         $smarty->setForceCompile($forceCompile);
         $smarty->addPluginsDir([__DIR__.'/plugins']);
+
+        $smarty->registerPlugin('function', 'atktext', [new SmartyPluginText($language), 'plugin']);
 
         $debugger->addDebug('Instantiated new Smarty');
 

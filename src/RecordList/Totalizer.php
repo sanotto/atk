@@ -3,7 +3,6 @@
 namespace Sintattica\Atk\RecordList;
 
 use Sintattica\Atk\Core\Node;
-use Sintattica\Atk\Core\Tools;
 
 /**
  * The atkTotalizer is a utility class to handle totals and subtotals
@@ -121,7 +120,7 @@ class Totalizer
         // replace columns
         foreach ($row['data'] as $col => $value) {
             if ($col == $fieldname) {
-                $row['data'][$col] = Tools::atktext('subtotal');
+                $row['data'][$col] = $this->m_node->getLanguage()->text('subtotal');
             } else {
                 if (isset($subtotalcolumns[$col])) {
                     $row['data'][$col] = $subtotalcolumns[$col];

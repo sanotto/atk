@@ -3,6 +3,7 @@
 namespace Sintattica\Atk\Errors;
 
 use Sintattica\Atk\Core\Config;
+use Sintattica\Atk\Core\Language;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Ui\Output;
 use Sintattica\Atk\Utils\Debugger;
@@ -11,11 +12,13 @@ class ErrorManager
 {
     protected $debugger;
     protected $output;
+    protected $language;
 
-    public function __construct(Debugger $debugger, Output $output)
+    public function __construct(Debugger $debugger, Output $output, Language $language)
     {
         $this->debugger = $debugger;
         $this->output = $output;
+        $this->language = $language;
     }
 
     /**
@@ -124,7 +127,11 @@ class ErrorManager
         $default_error_handlers = [];
         $mailReport = Config::getGlobal('mailreport');
         if ($mailReport) {
-            $default_error_handlers['Mail'] = array('mailto' => $mailReport, 'identifier' => Config::getGlobal('identifier'));
+            $default_error_handlers['Mail'] = [
+                'mailto' => $mailReport,
+                'identifier' => Config::getGlobal('identifier'),
+                'app_title' => $this->language->text('app_title')
+            ];
         }
 
         $errorHandlers = Config::getGlobal('error_handlers', $default_error_handlers);

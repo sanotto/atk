@@ -39,6 +39,11 @@ class DataGridList extends DataGridComponent
         return $ui->render($grid->getNode()->getTemplate('admin'), $data, $grid->getNode()->m_module);
     }
 
+    protected function getLanguage()
+    {
+        return $this->getNode()->getLanguage();
+    }
+
     /**
      * Get records for a recordlist without actually rendering the recordlist.
      *
@@ -141,7 +146,7 @@ class DataGridList extends DataGridComponent
         $sortend = '';
         if ($grid->hasFlag(DataGrid::EXTENDED_SORT)) {
             $call = htmlentities($grid->getUpdateCall(array('atkstartat' => 0), [], 'ATK.DataGrid.extractExtendedSortOverrides'));
-            $button = '<input type="button" value="'.Tools::atktext('sort').'" onclick="'.$call.'">';
+            $button = '<input type="button" value="'.$this->getLanguage()->text('sort').'" onclick="'.$call.'">';
 
             if (!$edit && ($hasMRA || $grid->hasFlag(DataGrid::MULTI_RECORD_PRIORITY_ACTIONS))) {
                 $sortcols[] = array('content' => ''); // Empty leader on top of mra action list.
@@ -171,10 +176,10 @@ class DataGridList extends DataGridComponent
         if ($hasSearch) {
             $call = htmlentities($grid->getUpdateCall(array('atkstartat' => 0), [], 'ATK.DataGrid.extractSearchOverrides'));
             $buttonType = $grid->isEmbedded() ? 'button' : 'submit';
-            $button = '<input type="'.$buttonType.'" class="btn btn-default btn_search" value="'.Tools::atktext('search').'" onclick="'.$call.' return false;">';
+            $button = '<input type="'.$buttonType.'" class="btn btn-default btn_search" value="'.$this->getLanguage()->text('search').'" onclick="'.$call.' return false;">';
             if ($grid->hasFlag(DataGrid::EXTENDED_SEARCH)) {
                 $button .= ' '.$this->sessionManager->href(Config::getGlobal('dispatcher').'?atknodeuri='.$grid->getActionNode()->atkNodeUri().'&atkaction='.$grid->getActionNode()->getExtendedSearchAction(),
-                        '('.Tools::atktext('search_extended').')', $this->sessionManager::SESSION_NESTED);
+                        '('.$this->getLanguage()->text('search_extended').')', $this->sessionManager::SESSION_NESTED);
             }
 
             $button = '<div class="search-buttons">'.$button.'</div>';
@@ -405,15 +410,15 @@ class DataGridList extends DataGridComponent
 
             /* multiple actions -> dropdown */
             if (count($grid->getNode()->m_priority_actions) > 1) {
-                $mra = '<select name="'.$listName.'_atkaction" class="form-control select-standard">'.'<option value="">'.Tools::atktext('with_selected').':</option>';
+                $mra = '<select name="'.$listName.'_atkaction" class="form-control select-standard">'.'<option value="">'.$this->getLanguage()->text('with_selected').':</option>';
 
                 foreach ($grid->getNode()->m_priority_actions as $name) {
-                    $mra .= '<option value="'.$name.'">'.Tools::atktext($name).'</option>';
+                    $mra .= '<option value="'.$name.'">'.$this->getLanguage()->text($name).'</option>';
                 }
 
-                $mra .= '</select>&nbsp;'.$this->getCustomMraHtml().'<input type="button" class="btn" value="'.Tools::atktext('submit').'" onclick="ATK.FormSelect.atkSubmitMRPA(\''.$listName.'\', this.form, \''.$target.'\')">';
+                $mra .= '</select>&nbsp;'.$this->getCustomMraHtml().'<input type="button" class="btn" value="'.$this->getLanguage()->text('submit').'" onclick="ATK.FormSelect.atkSubmitMRPA(\''.$listName.'\', this.form, \''.$target.'\')">';
             } /* one action -> only the submit button */ else {
-                $mra = $this->getCustomMraHtml().'<input type="hidden" name="'.$listName.'_atkaction" value="'.$grid->getNode()->m_priority_actions[0].'">'.'<input type="button" class="btn" value="'.Tools::atktext($grid->getNode()->m_priority_actions[0]).'" onclick="ATK.FormSelect.atkSubmitMRPA(\''.$listName.'\', this.form, \''.$target.'\')">';
+                $mra = $this->getCustomMraHtml().'<input type="hidden" name="'.$listName.'_atkaction" value="'.$grid->getNode()->m_priority_actions[0].'">'.'<input type="button" class="btn" value="'.$this->getLanguage()->text($grid->getNode()->m_priority_actions[0]).'" onclick="ATK.FormSelect.atkSubmitMRPA(\''.$listName.'\', this.form, \''.$target.'\')">';
             }
         } elseif (!$edit && $hasMRA) {
             /* MULTI-RECORD-ACTION FORM (CONTINUED) */
@@ -422,9 +427,9 @@ class DataGridList extends DataGridComponent
             $target = $sm->sessionUrl(Config::getGlobal('dispatcher').'?atknodeuri='.$grid->getNode()->atkNodeUri().'&atktarget='.(!empty($postvars['atktarget']) ? $postvars['atktarget'] : '').'&atktargetvar='.(!empty($postvars['atktargetvar']) ? $postvars['atktargetvar'] : '').'&atktargetvartpl='.(!empty($postvars['atktargetvartpl']) ? $postvars['atktargetvartpl'] : ''),
                 $this->sessionManager::SESSION_NESTED);
 
-            $mra_all = '<button type="button" class="btn btn-default" onclick="ATK.FormSelect.updateSelection(\''.$listName.'\', this.form, \'all\');">'.Tools::atktext('select_all').'</button>';
-            $mra_none = '<button type="button" class="btn btn-default" onclick="ATK.FormSelect.updateSelection(\''.$listName.'\', this.form, \'none\');">'.Tools::atktext('deselect_all').'</button>';
-            $mra_invert = '<button type="button" class="btn btn-default" onclick="ATK.FormSelect.updateSelection(\''.$listName.'\', this.form, \'invert\');">'.Tools::atktext('select_invert').'</button>';
+            $mra_all = '<button type="button" class="btn btn-default" onclick="ATK.FormSelect.updateSelection(\''.$listName.'\', this.form, \'all\');">'.$this->getLanguage()->text('select_all').'</button>';
+            $mra_none = '<button type="button" class="btn btn-default" onclick="ATK.FormSelect.updateSelection(\''.$listName.'\', this.form, \'none\');">'.$this->getLanguage()->text('deselect_all').'</button>';
+            $mra_invert = '<button type="button" class="btn btn-default" onclick="ATK.FormSelect.updateSelection(\''.$listName.'\', this.form, \'invert\');">'.$this->getLanguage()->text('select_invert').'</button>';
 
 
             $mra_select = "$mra_all $mra_none $mra_invert ";
@@ -437,7 +442,7 @@ class DataGridList extends DataGridComponent
             /* multiple actions -> dropdown */
             if (count($list['mra']) > 1) {
                 $default = $this->getGrid()->getMRADefaultAction();
-                $mra .= '<select data-minimum-results-for-search="Infinity" data-width="element" name="'.$listName.'_atkaction" id="'.$listName.'_atkaction" onchange="ATK.FormSelect.updateSelectable(\''.$listName.'\', this.form);" class="form-control">'.'<option value="">'.Tools::atktext('with_selected').'</option>';
+                $mra .= '<select data-minimum-results-for-search="Infinity" data-width="element" name="'.$listName.'_atkaction" id="'.$listName.'_atkaction" onchange="ATK.FormSelect.updateSelectable(\''.$listName.'\', this.form);" class="form-control">'.'<option value="">'.$this->getLanguage()->text('with_selected').'</option>';
 
                 foreach ($list['mra'] as $name) {
                     if ($grid->getNode()->allowed($name)) {
@@ -452,12 +457,12 @@ class DataGridList extends DataGridComponent
                         if ($default == $name) {
                             $mra .= 'selected="selected"';
                         }
-                        $mra .= '>'.Tools::atktext($actionKeys, $grid->getNode()->m_module, $grid->getNode()->m_type).'</option>';
+                        $mra .= '>'.$this->getLanguage()->text($actionKeys, $grid->getNode()->m_module, $grid->getNode()->m_type).'</option>';
                     }
                 }
 
                 $embedded = $this->getGrid()->isEmbedded() ? 'true' : 'false';
-                $mra .= '</select>&nbsp;'.$this->getCustomMraHtml().'<input type="button" class="btn btn-primary" value="'.Tools::atktext('submit').'" onclick="ATK.FormSelect.atkSubmitMRA(\''.$listName.'\', this.form, \''.$target.'\', '.$embedded.', false)">';
+                $mra .= '</select>&nbsp;'.$this->getCustomMraHtml().'<input type="button" class="btn btn-primary" value="'.$this->getLanguage()->text('submit').'" onclick="ATK.FormSelect.atkSubmitMRA(\''.$listName.'\', this.form, \''.$target.'\', '.$embedded.', false)">';
                 $mra .= "<script>ATK.Tools.enableSelect2ForSelect('#".$listName."_atkaction');</script>";
             } elseif ($grid->getNode()->allowed($list['mra'][0])) {
                 /* one action -> only the submit button */
@@ -471,12 +476,12 @@ class DataGridList extends DataGridComponent
                 );
 
                 $embedded = $this->getGrid()->isEmbedded() ? 'true' : 'false';
-                $mra .= '<input type="hidden" name="'.$listName.'_atkaction" value="'.$name.'">'.$this->getCustomMraHtml().'<input type="button" class="btn btn-primary" value="'.Tools::atktext($actionKeys,
+                $mra .= '<input type="hidden" name="'.$listName.'_atkaction" value="'.$name.'">'.$this->getCustomMraHtml().'<input type="button" class="btn btn-primary" value="'.$this->getLanguage()->text($actionKeys,
                         $grid->getNode()->m_module,
                         $grid->getNode()->m_type).'" onclick="ATK.FormSelect.atkSubmitMRA(\''.$listName.'\', this.form, \''.$target.'\', '.$embedded.', false)">';
             }
         } elseif ($edit) {
-            $mra = '<input type="button" class="btn btn-primary" value="'.Tools::atktext('save').'" onclick="'.htmlentities($this->getGrid()->getSaveCall()).'">';
+            $mra = '<input type="button" class="btn btn-primary" value="'.$this->getLanguage()->text('save').'" onclick="'.htmlentities($this->getGrid()->getSaveCall()).'">';
         }
 
         $recordListData = array(

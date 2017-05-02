@@ -37,17 +37,6 @@ class Menu
 
     protected $language;
 
-
-    /**
-     * Get new menu object.
-     *
-     * @return Menu class object
-     */
-    public static function getInstance()
-    {
-        return self::$s_instance;
-    }
-
     public function __construct(Page $page, SecurityManager $securityManager, Language $language)
     {
         $this->page = $page;

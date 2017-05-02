@@ -106,16 +106,6 @@ class Page
     protected static $s_page = null;
 
     /**
-     * Retrieve the one-and-only Page instance.
-     *
-     * @return Page
-     */
-    public static function getInstance()
-    {
-        return self::$s_page;
-    }
-
-    /**
      * Constructor.
      * @param Ui $ui
      */

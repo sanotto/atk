@@ -99,7 +99,7 @@ class ViewHandler extends ViewEditBase
             return $output;
         }
 
-        $this->getPage()->setTitle(Tools::atktext('app_shorttitle').' - '.$node->actionTitle($this->m_action, $record));
+        $this->getPage()->setTitle($this->getLanguage()->text('app_shorttitle').' - '.$node->actionTitle($this->m_action, $record));
         $vars = array('title' => $node->actionTitle($this->m_action, $record), 'content' => $output);
         $total = $ui->renderBox($vars, $this->m_boxTemplate);
 

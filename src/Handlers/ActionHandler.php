@@ -378,15 +378,15 @@ class ActionHandler
     public function _getAccessDeniedPage()
     {
         $ui = $this->m_node->getUi();
-        $content = '<br><br>'.Tools::atktext('error_node_action_access_denied', '', $this->m_node->getType()).'<br><br><br>';
+        $content = '<br><br>'.$this->getLanguage()->text('error_node_action_access_denied', '', $this->m_node->getType()).'<br><br><br>';
         $blocks = [
             $ui->renderBox([
-                'title' => Tools::atktext('access_denied'),
+                'title' => $this->getLanguage()->text('access_denied'),
                 'content' => $content,
             ]),
         ];
 
-        return $ui->render('actionpage.tpl', ['blocks' => $blocks, 'title' => Tools::atktext('access_denied')]);
+        return $ui->render('actionpage.tpl', ['blocks' => $blocks, 'title' => $this->getLanguage()->text('access_denied')]);
     }
 
     /**
@@ -456,5 +456,13 @@ class ActionHandler
     protected function isValidCSRFToken($token)
     {
         return $this->getCSRFToken() == $token;
+    }
+
+    /**
+     * @return \Sintattica\Atk\Core\Language
+     */
+    public function getLanguage()
+    {
+        return $this->getNode()->getLanguage();
     }
 }

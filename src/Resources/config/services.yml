@@ -15,10 +15,11 @@ services:
       - '%atk.security.securityscheme%'
     calls:
       - [setSessionManager, ['@atk.session_manager']]
+      - [setLanguage, ['@atk.language']]
 
   atk.session_manager:
     class: Sintattica\Atk\Session\SessionManager
-    arguments: ['default', true, '@atk.ui.ui', '@atk.debugger', '@atk.utils.redirect']
+    arguments: ['default', true, '@atk.ui.ui', '@atk.debugger', '@atk.utils.redirect', '@atk.language']
     calls:
       - [setNodeManager, ['@atk.node_manager']]
       - [setMessageQueue, ['@atk.session.message_queue']]
@@ -67,7 +68,7 @@ services:
   atk.ui.smarty:
     class: \Smarty
     factory: 'atk.ui.smarty_factory:createSmarty'
-    arguments: ['@atk.debugger', '%atk.template.compile_dir%', '%atk.template.template_dir%', '%atk.template.force_compile%']
+    arguments: ['@atk.debugger', '@atk.language', '%atk.template.compile_dir%', '%atk.template.template_dir%', '%atk.template.force_compile%']
 
   atk.debugger:
     class: Sintattica\Atk\Utils\Debugger
@@ -83,6 +84,7 @@ services:
 
   atk.tools:
     class: Sintattica\Atk\Core\Tools
+    arguments: ['@atk.language']
 
   atk.language:
     class: Sintattica\Atk\Core\Language
@@ -100,7 +102,7 @@ services:
 
   atk.error_manager:
     class: Sintattica\Atk\Errors\ErrorManager
-    arguments: ['@atk.debugger', '@atk.ui.output']
+    arguments: ['@atk.debugger', '@atk.ui.output', '@atk.language']
 
   atk.node_manager:
     class: Sintattica\Atk\Core\NodeManager

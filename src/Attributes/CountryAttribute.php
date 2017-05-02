@@ -406,7 +406,7 @@ class CountryAttribute extends ListAttribute
     public function edit($record, $fieldprefix, $mode)
     {
         if ($this->m_defaulttocurrent && !$record[$this->fieldName()]) {
-            $record[$this->fieldName()] = strtoupper($this->getOwnerInstance()->getLanguage()::getLanguage());
+            $record[$this->fieldName()] = strtoupper($this->getOwnerInstance()->getLanguage()->getLanguageCode());
         }
 
         return parent::edit($record, $fieldprefix, $mode);
@@ -490,7 +490,7 @@ class CountryAttribute extends ListAttribute
      */
     public function getCountryOption($iso_code)
     {
-        $lng = $this->getOwnerInstance()->getLanguage()::getLanguage();
+        $lng = $this->getOwnerInstance()->getLanguage()->getLanguageCode();
         if (!array_key_exists($iso_code, $this->m_country)) {
             $this->getOwnerInstance()->getDebugger()->addDebug('UNKNOWN ISO CODE: '.$iso_code);
         }

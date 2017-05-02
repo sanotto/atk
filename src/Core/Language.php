@@ -2,8 +2,6 @@
 
 namespace Sintattica\Atk\Core;
 
-use Sintattica\Atk\Security\SecurityManager;
-use Sintattica\Atk\Session\SessionManager;
 use Sintattica\Atk\Utils\Debugger;
 
 /**
@@ -30,7 +28,7 @@ class Language
      *
      * @var array
      */
-    private static $s_supportedLanguages = null;
+    private $s_supportedLanguages = null;
 
     /*
      * Directory where language files are stored.
@@ -76,6 +74,8 @@ class Language
 
     
     protected $debugger;
+
+    /** @var  ModuleManager $moduleManager */
     protected $moduleManager;
     
     /**
@@ -96,19 +96,6 @@ class Language
         if(!$this->moduleManager) {
             $this->moduleManager = $moduleManager;
         }
-    }
-
-    /**
-     * Gets an instance of the Language class.
-     *
-     * Using this function will ensure that only 1 instance ever exists
-     * (singleton).
-     *
-     * @return Language Instance of the atkLanguage class
-     */
-    public static function getInstance()
-    {
-        return self::$s_instance;
     }
 
     /**
@@ -180,9 +167,9 @@ class Language
      *
      * @return string the string from the languagefile
      */
-    public static function text(
+    public function text(
         $string,
-        $module,
+        $module = '',
         $node = '',
         $lng = '',
         $firstfallback = '',
@@ -194,20 +181,19 @@ class Language
             return '';
         }
         if ($lng == '') {
-            $lng = self::getLanguage();
+            $lng = $this->getLanguageCode();
         }
         $lng = strtolower($lng);
-        $atklanguage = self::getInstance();
 
         // If only one string given, process it immediatly
         if (!is_array($string)) {
-            return $atklanguage->_getString($string, $module, $lng, $node, $nodefaulttext, $firstfallback, $modulefallback);
+            return $this->_getString($string, $module, $lng, $node, $nodefaulttext, $firstfallback, $modulefallback);
         }
 
         // If multiple strings given, iterate through all strings and return the translation if found
         for ($i = 0, $_i = count($string); $i < $_i; ++$i) {
             // Try to get the translation
-            $translation = $atklanguage->_getString($string[$i], $module, $lng, $node, $nodefaulttext || ($i < ($_i - 1)), $firstfallback, $modulefallback);
+            $translation = $this->_getString($string[$i], $module, $lng, $node, $nodefaulttext || ($i < ($_i - 1)), $firstfallback, $modulefallback);
 
             // Return the translation if found
             if ($translation != '') {
@@ -229,38 +215,36 @@ class Language
      *
      * @return array Translations
      */
-    public static function getStringsForModule($module, $lng = '')
+    public function getStringsForModule($module, $lng = '')
     {
         if ($lng == '') {
-            $lng = self::getLanguage();
+            $lng = $this->getLanguageCode();
         }
-        $atklanguage = self::getInstance();
 
-        $atklanguage->_includeLanguage($module, $lng);
+        $this->_includeLanguage($module, $lng);
 
-        if (isset($atklanguage->m_cachedlang[$module]) && is_array($atklanguage->m_cachedlang[$module][$lng])) {
-            return $atklanguage->m_cachedlang[$module][$lng];
+        if (isset($this->m_cachedlang[$module]) && is_array($this->m_cachedlang[$module][$lng])) {
+            return $this->m_cachedlang[$module][$lng];
         }
 
         return [];
     }
 
     /**
-     * Get the current language, either from url, or if that's not present, from what the user has set.
+     * Get the current language
      *
      * @static
      *
      * @return string current language.
      */
-    public static function getLanguage()
+    public function getLanguageCode()
     {
-        if (isset(Atk::$ATK_VARS['atklng']) && in_array(Atk::$ATK_VARS['atklng'], self::getSupportedLanguages())) {
-            $lng = Atk::$ATK_VARS['atklng'];
-        } else {
-            $lng = self::getUserLanguage();
+        $supportedLanguages = $this->getSupportedLanguages();
+        if (isset(Atk::$ATK_VARS['atklng']) && in_array(Atk::$ATK_VARS['atklng'], $supportedLanguages)) {
+            return strtolower(Atk::$ATK_VARS['atklng']);
         }
 
-        return strtolower($lng);
+        return strtolower($supportedLanguages[0]);
     }
 
     /**
@@ -275,39 +259,6 @@ class Language
     public static function setLanguage($lng)
     {
         Atk::$ATK_VARS['atklng'] = $lng;
-    }
-
-    /**
-     * Get the selected language of the current user if he/she set one,
-     * otherwise we try to get it from the browser settings and if even THAT
-     * fails, we return the default language.
-     *
-     * @static
-     *
-     * @return string
-     */
-    public static function getUserLanguage()
-    {
-        $supported = self::getSupportedLanguages();
-        $sessionmanager = SessionManager::getInstance();
-        if (!empty($sessionmanager)) {
-            $userinfo = SecurityManager::atkGetUser();
-            $fieldname = Config::getGlobal('auth_languagefield');
-            if (isset($userinfo[$fieldname]) && in_array($userinfo[$fieldname], $supported)) {
-                return $userinfo[$fieldname];
-            }
-        }
-
-        // Otherwise we check the headers
-        if (Config::getGlobal('use_browser_language', false)) {
-            $headerlng = self::getLanguageFromHeaders();
-            if ($headerlng && in_array($headerlng, $supported)) {
-                return $headerlng;
-            }
-        }
-
-        // We give up and just return the default language
-        return Config::getGlobal('language');
     }
 
     /**
@@ -336,9 +287,9 @@ class Language
      *
      * @param array $languages supported languages
      */
-    public static function setSupportedLanguages(array $languages)
+    public function setSupportedLanguages(array $languages)
     {
-        self::$s_supportedLanguages = $languages;
+        $this->s_supportedLanguages = $languages;
     }
 
     /**
@@ -346,13 +297,13 @@ class Language
      *
      * @return array An array with the languages supported by the application.
      */
-    public static function getSupportedLanguages()
+    public function getSupportedLanguages()
     {
-        if (self::$s_supportedLanguages === null) {
-            self::$s_supportedLanguages = Config::getGlobal('supported_languages');
+        if ($this->s_supportedLanguages === null) {
+            $this->s_supportedLanguages = Config::getGlobal('supported_languages');
         }
 
-        return self::$s_supportedLanguages;
+        return $this->s_supportedLanguages;
     }
 
     /**

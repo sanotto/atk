@@ -87,7 +87,49 @@ class DateAttribute extends Attribute
      */
     public function formatDate($date, $format, $weekday = true)
     {
-        return Tools::atkFormatDate($date, $format, $weekday);
+        static $langcache = [];
+
+        if (!is_array($date)) {
+            $date = getdate($date);
+        }
+
+        /* format month */
+        $format = str_replace('M', '%-%', $format);
+        $format = str_replace('F', '%=%', $format);
+
+        /* format day */
+        $format = str_replace('D', '%&%', $format);
+        $format = str_replace('l', '%*%', $format);
+
+        if ($weekday && strpos($format, '%&%') === false && strpos($format, '%*%') === false) {
+            $format = str_replace('d', '%*% d', $format);
+            $format = str_replace('j', '%*% j', $format);
+        }
+
+        /* get date string */
+        $str_date = date($format, $date[0]);
+
+        $month = $date['month'];
+        $shortmonth = substr(strtolower($date['month']), 0, 3);
+
+        /* store the self::text calls */
+        if (!isset($langcache[$month])) {
+            $langcache[$month] = $this->getOwnerInstance()->getLanguage()->text(strtolower($month), 'atk');
+        }
+
+        if (!isset($langcache[$shortmonth])) {
+            $langcache[$shortmonth] = $this->getOwnerInstance()->getLanguage()->text($shortmonth);
+        }
+
+        /* replace month/week name */
+        $str_date = str_replace('%-%', $langcache[$shortmonth], $str_date);
+        $str_date = str_replace('%=%', $langcache[$month], $str_date);
+        $str_date = str_replace('%*%', $this->getOwnerInstance()->getLanguage()->text(strtolower($date['weekday']), 'atk'), $str_date);
+        $str_date = str_replace('%&%', $this->getOwnerInstance()->getLanguage()->text(substr(strtolower($date['weekday']), 0, 3), 'atk'), $str_date);
+
+        /* return string */
+
+        return $str_date;
     }
 
     /**

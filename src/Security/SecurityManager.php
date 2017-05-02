@@ -5,6 +5,7 @@ namespace Sintattica\Atk\Security;
 use Sintattica\Atk\Attributes\Attribute;
 use Sintattica\Atk\Core\Atk;
 use Sintattica\Atk\Core\Config;
+use Sintattica\Atk\Core\Language;
 use Sintattica\Atk\Core\Tools;
 use Sintattica\Atk\Db\Db;
 use Sintattica\Atk\Security\Auth\AuthInterface;
@@ -54,6 +55,9 @@ class SecurityManager
 
     /** @var  SessionManager $sessionManager */
     protected $sessionManager;
+
+    /** @var  Language $language */
+    protected $language;
 
     static $s_instance = null;
 
@@ -105,9 +109,9 @@ class SecurityManager
         $this->sessionManager = $sessionManager;
     }
 
-    public static function getInstance()
+    public function setLanguage(Language $language)
     {
-        return self::$s_instance;
+        $this->language = $language;
     }
 
     /**
@@ -196,7 +200,7 @@ class SecurityManager
                     $error =  $this->getAuthResponseTranslation($this->auth_response);
                     $this->loginForm($auth_user, $error);
                 } else {
-                    header('WWW-Authenticate: Basic realm="'.Tools::atktext('app_title').(Config::getGlobal('auth_changerealm', true) ? ' - '.strftime('%c',
+                    header('WWW-Authenticate: Basic realm="'.$this->language->text('app_title').(Config::getGlobal('auth_changerealm', true) ? ' - '.strftime('%c',
                                 time()) : '').'"');
                     if (preg_match('/Microsoft/', $_SERVER['SERVER_SOFTWARE'])) {
                         header('Status: 401 Unauthorized');
@@ -228,13 +232,13 @@ class SecurityManager
         $error = '';
         switch ($auth_response) {
             case self::AUTH_LOCKED:
-                $error = Tools::atktext('auth_account_locked');
+                $error = $this->language->text('auth_account_locked');
                 break;
             case self::AUTH_MISMATCH:
-                $error = Tools::atktext('auth_mismatch');
+                $error = $this->language->text('auth_mismatch');
                 break;
             case self::AUTH_MISSINGUSERNAME:
-                $error = Tools::atktext('auth_missingusername');
+                $error = $this->language->text('auth_missingusername');
                 break;
         }
         return $error;
@@ -465,12 +469,12 @@ class SecurityManager
         $tplvars = [];
         $tplvars['atksessionformvars'] = Tools::makeHiddenPostvars(['atklogout', 'auth_rememberme', 'u2f_response']);
         $tplvars['formurl'] = Config::getGlobal('dispatcher');
-        $tplvars['username'] = Tools::atktext('username');
-        $tplvars['password'] = Tools::atktext('password');
+        $tplvars['username'] = $this->language->text('username');
+        $tplvars['password'] = $this->language->text('password');
         $tplvars['defaultname'] = htmlentities($defaultname);
         $tplvars['passwordfield'] = '<input class="loginform" type="password" size="20" name="auth_pw" value="" />';
-        $tplvars['submitbutton'] = '<input name="login" class="button" type="submit" value="'.Tools::atktext('login').'" />';
-        $tplvars['title'] = Tools::atktext('login_form');
+        $tplvars['submitbutton'] = '<input name="login" class="button" type="submit" value="'.$this->language->text('login').'" />';
+        $tplvars['title'] = $this->language->text('login_form');
         if ($error != '') {
             $tplvars['error'] = $error;
         }
@@ -484,7 +488,7 @@ class SecurityManager
 
         $page->addContent($ui->render('login.tpl', $tplvars));
         $output = $this->output;
-        $output->output($page->render(Tools::atktext('app_title'), Page::HTML_STRICT, '', $ui->render('login_meta.tpl')));
+        $output->output($page->render($this->language->text('app_title'), Page::HTML_STRICT, '', $ui->render('login_meta.tpl')));
         $output->outputFlush();
         exit;
     }
@@ -853,11 +857,11 @@ class SecurityManager
             $res = json_decode($u2f_response, true);
             $error = '';
             if (isset($res['errorCode'])) {
-                $error = Tools::atktext('u2f_errorcode_'.$res['errorCode'], '', '', '', '', true, false);
+                $error = $this->language->text('u2f_errorcode_'.$res['errorCode'], '', '', '', '', true, false);
             }
 
             if ($error == '') {
-                $error = Tools::atktext('u2f_error');
+                $error = $this->language->text('u2f_error');
             }
 
             $this->auth_response = self::AUTH_ERROR;
@@ -889,7 +893,7 @@ class SecurityManager
         $output = $this->output;
         $page->register_script(Config::getGlobal('assets_url').'javascript/u2f-api.js');
         $page->addContent($result);
-        $output->output($page->render(Tools::atktext('app_title')));
+        $output->output($page->render($this->language->text('app_title')));
         $output->outputFlush();
         exit;
     }

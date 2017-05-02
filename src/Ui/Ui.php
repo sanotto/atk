@@ -33,16 +33,6 @@ class Ui
     }
 
     /**
-     * get a singleton instance of the Ui class.
-     *
-     * @return Ui
-     */
-    public static function getInstance()
-    {
-        return self::$s_instance;
-    }
-
-    /**
      * Renders action templates
      * Currently only the view action is implemented.
      *

@@ -134,7 +134,7 @@ class Config
         //TODO: refactor getConfigForSection!!!
 
 
-//        $app = Atk::getInstance();
+//        $app = ***atkinstance***
 //        if ($app->isModule($section)) {
 //            $dir = $app->moduleDir($section).self::getGlobal('configdirname').'/';
 //            if (is_dir($dir)) {
