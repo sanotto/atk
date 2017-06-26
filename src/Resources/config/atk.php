@@ -830,6 +830,12 @@ return [
      */
     'recordlist_orientation' => 'left',
 
+
+    /*
+     * recordlist top scroller
+     */
+    'recordlist_top_scroller' => false,
+
     /*
      * recordlist top scroller
      */
