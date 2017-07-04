@@ -4,7 +4,7 @@ namespace Sintattica\Atk\Core;
 
 class Atk
 {
-    const VERSION = 'v9.1.3-dev';
+    const VERSION = 'v9.2.0-dev';
 
     public static $ATK_VARS;
 
