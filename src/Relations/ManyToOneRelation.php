@@ -1110,7 +1110,7 @@ class ManyToOneRelation extends Relation
         $htmlAttributes = [];
         $isMultiple = $this->isMultipleSearch($extended);
         $onchange = '';
-        $options = ['' => Tools::atktext('search_all')];
+        $options = ['' => $this->getOwnerInstance()->getLanguage()->trans('search_all')];
         $selectOptions = [];
         $selectOptions['enable-select2'] = true;
         $selectOptions['dropdown-auto-width'] = true;

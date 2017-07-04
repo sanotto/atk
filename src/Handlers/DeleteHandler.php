@@ -125,7 +125,6 @@ class DeleteHandler extends ActionHandler
         $db = $this->m_node->getDb();
         if ($this->m_node->deleteDb($this->m_postvars['atkselector'])) {
             $db->commit();
-            $this->clearCache();
 
             return true;
         } else { // Something is wrong here, the deleteDb failed

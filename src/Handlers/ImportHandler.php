@@ -1110,9 +1110,6 @@ class ImportHandler extends ActionHandler
         // clean-up
         @unlink($file);
 
-        // clear recordlist cache
-        $this->clearCache();
-
         // register message
         $messageQueue = $this->sessionManager->getMessageQueue();
 

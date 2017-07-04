@@ -178,6 +178,8 @@ ATK.Tools = {
         var $el = jQuery(select);
         var options = {};
 
+
+
         if ($el.is('select')) {
             if (typeof $el.data('with-empty-value') !== 'undefined') {
                 options.templateSelection = function (data) {

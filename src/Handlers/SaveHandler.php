@@ -247,7 +247,6 @@ class SaveHandler extends ActionHandler
 
         $this->m_node->getDb()->commit();
         $this->notify('save', $record);
-        $this->clearCache();
 
         return true;
     }

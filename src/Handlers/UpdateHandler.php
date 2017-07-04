@@ -251,8 +251,6 @@ class UpdateHandler extends ActionHandler
             $db->commit();
             $this->notify('update', $record);
 
-            $this->clearCache();
-
             return true;
         } else {
             $db->rollback();
