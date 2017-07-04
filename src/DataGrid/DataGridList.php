@@ -214,6 +214,7 @@ class DataGridList extends DataGridComponent
         $listend = '';
 
         if (!$edit && ($hasMRA || $grid->hasFlag(DataGrid::MULTI_RECORD_PRIORITY_ACTIONS))) {
+	        $page->register_script(Config::getGlobal('assets_url').'javascript/formsubmit.js');
             $page->register_script(Config::getGlobal('assets_url').'javascript/formselect.js');
 
             if ($hasMRA) {
