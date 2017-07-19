@@ -306,7 +306,7 @@ class TimeAttribute extends Attribute
      */
     public function db2value($rec)
     {
-        if (strlen($rec[$this->fieldName()]) == 0) {
+        if (!isset($rec[$this->fieldName()]) || strlen($rec[$this->fieldName()]) == 0) {
             $retval = null;
         } else {
             $retval = array(
