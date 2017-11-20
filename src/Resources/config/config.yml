@@ -5,9 +5,9 @@ parameters:
     - App\Modules\App\Module
     - App\Modules\Testbed\Module
 
-  atk.security.authentication: db
-  atk.security.authorization: db
-  atk.security.securityscheme: group
+  atk.security.authentication: none
+  atk.security.authorization: none
+  atk.security.securityscheme: none
 
   atk.template.compile_dir: '%atk.root_dir%/var/atktmp/tpl'
   atk.template.template_dir: '%atk.root_dir%/vendor/sintattica/atk/src/Resources/templates'
@@ -20,7 +20,7 @@ parameters:
     default:
       host: localhost
       db: atk-testbed
-      user: root
-      password: ~
+      user: web
+      password: web
       charset: utf8
       driver: MySqli
