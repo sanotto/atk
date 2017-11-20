@@ -1774,6 +1774,7 @@ class Node
 
 
         $page->register_script(Config::getGlobal('assets_url').'javascript/tools.js');
+        $page->register_script(Config::getGlobal('assets_url').'javascript/formsubmit.js');
         $sm = $this->sessionManager;
 
         // edit mode
